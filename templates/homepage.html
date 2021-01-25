@@ -1,0 +1,57 @@
+<div class="kui-flex-wrap">
+  <style>
+  @media only screen and (orientation : portrait) {
+    .img-holder-hp {
+      margin-left: -30px;
+      height: 160px;
+      width: 160px;
+    }
+  }
+  @media screen and (orientation: landscape) {
+    .img-holder-hp {
+      margin-left: -30px;
+      height: 80px;
+      width: 80px;
+    }
+  }
+  </style>
+  {{#POCKET_ACCESS_TOKEN}}
+    {{#empty}}
+      <div style="text-align:center;white-space:pre-wrap!important;word-break:break-word!important;font-weight:bold;">
+        <img class="img-holder-hp" src="/img/empty.png"/>
+        <div>Your Pocket is empty</div>
+      </div>
+    {{/empty}}
+    {{^empty}}
+      <ul class="kui-list kai-container">
+        {{#articles}}
+          {{#isArticle}}
+          <li class="homepageNav" style="padding-left:5px;padding:right:5px;">
+            <div style="width:100%;height:60px;display:flex;flex-direction:row;">
+              <div style="width:60px;padding-top:5px;">
+                <img src="{{ preview }}" style="object-fit:cover;" width="50px" height="50px"/>
+              </div>
+              <div style="flex-grow:1;padding-left:5px;">
+                <small style="white-space: pre-wrap!important;word-break: break-word!important;">{{ resolved_title }}</small>
+              </div>
+            </div>
+          </li>
+          {{/isArticle}}
+          {{^isArticle}}
+            <li class="homepageNav" @click='nextPage()'>
+              <div style="width:100%;height:60px;display:flex;flex-direction:row;justify-content:space-around;align-items:center;">
+                <small style="white-space:pre-wrap!important;word-break:break-word!important;font-weight:bold;">Next Page</small>
+              </div>
+            </li>
+          {{/isArticle}}
+        {{/articles}}
+      </ul>
+    {{/empty}}
+  {{/POCKET_ACCESS_TOKEN}}
+  {{^POCKET_ACCESS_TOKEN}}
+      <div style="text-align:center;white-space:pre-wrap!important;word-break:break-word!important;font-weight:bold;">
+        <img class="img-holder-hp" src="/img/login.png"/>
+        <div>Please login your Pocket</div>
+      </div>
+  {{/POCKET_ACCESS_TOKEN}}
+</div>
