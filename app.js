@@ -7,9 +7,19 @@ window.addEventListener("load", function() {
   var IFRAME_TIMER;
 
   const state = new KaiState({
-    'redirect_url': '',
+    'target_url': '',
     'editor': '',
   });
+
+  function validURL(str) {
+    var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
+      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
+      '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+      '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+      '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+      '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
+    return !!pattern.test(str);
+  }
 
   const getPocketApi = function(ACCESS_TOKEN, type, config = {}) {
     return new Promise((resolve, reject) => {
@@ -176,6 +186,7 @@ window.addEventListener("load", function() {
     data: {
       title: 'browser',
       loading: false,
+      zoom: 1,
     },
     templateUrl: document.location.origin + '/templates/browser.html',
     mounted: function() {
@@ -187,14 +198,135 @@ window.addEventListener("load", function() {
       navigator.spatialNavigationEnabled = true;
       var frameContainer = document.getElementById('browser-iframe');
       var root = frameContainer.createShadowRoot();
-      currentTab = new Tab('https://www.google.com/');
-      currentTab.iframe.setAttribute('height', '266px;');
+      var TARGET_URL = this.$state.getState('target_url');
+      if (TARGET_URL === '') {
+        TARGET_URL = 'https://www.google.com/';
+      } else if (!validURL(TARGET_URL)) {
+        TARGET_URL = 'https://www.google.com/search?q=' + TARGET_URL;
+      }
+      this.$state.setState('target_url', TARGET_URL);
+      currentTab = new Tab(TARGET_URL);
+      currentTab.iframe.setAttribute('style', 'position:fixed;margin-top:28px;top:0;height:91%;width:100%;');
       currentTab.iframe.setAttribute('frameBorder', '0');
       currentTab.iframe.addEventListener('mozbrowserlocationchange', (e) => {
-        this.$state.setState('redirect_url', e.detail.url);
+        this.$state.setState('target_url', e.detail.url);
         this.$router.setHeaderTitle(e.detail.url);
       });
       currentTab.iframe.addEventListener('mozbrowsercontextmenu', (event) => {
+        console.log('mozbrowsercontextmenu');
+        if (document.activeElement.tagName === 'IFRAME') {
+          document.activeElement.blur();
+          console.log('remove OPTIONS sr-only & add DONE sr-only')
+          document.getElementById('search-menu').classList.remove('sr-only');
+          document.getElementById('option-menu').classList.remove('sr-only');
+          document.getElementById('done-btn').classList.add('sr-only');
+        }
+        //this.methods.rightMenu();
+      });
+      currentTab.iframe.addEventListener('mozbrowserloadstart', (event) => {
+        document.getElementById('search-menu').classList.remove('sr-only');
+        document.getElementById('option-menu').classList.remove('sr-only');
+        document.getElementById('done-btn').classList.add('sr-only');
+        this.$router.showLoading(false);
+        this.data.loading = true;
+      });
+      currentTab.iframe.addEventListener('mozbrowserloadend', (event) => {
+        this.$router.hideLoading();
+        this.data.loading = false;
+        window['IFRAME_SOFTKEY_TIMEOUT'] = setTimeout(() => {
+          document.getElementById('search-menu').classList.add('sr-only');
+          document.getElementById('option-menu').classList.add('sr-only');
+        }, 2000);
+      });
+      currentTab.iframe.addEventListener('mozbrowseropenwindow', (event) => {
+        //console.log('mozbrowseropenwindow', event);
+      });
+      currentTab.iframe.addEventListener('mozbrowseropentab', (event) => {
+        //console.log('mozbrowseropentab', event);
+      });
+      currentTab.iframe.addEventListener('mozbrowserscroll', (event) => {
+        document.getElementById('search-menu').classList.remove('sr-only');
+        document.getElementById('option-menu').classList.remove('sr-only');
+        clearTimeout(window['IFRAME_SOFTKEY_TIMEOUT']);
+        window['IFRAME_SOFTKEY_TIMEOUT'] = setTimeout(() => {
+          document.getElementById('search-menu').classList.add('sr-only');
+          document.getElementById('option-menu').classList.add('sr-only');
+        }, 2000);
+      });
+      currentTab.iframe.addEventListener('mozbrowsersecuritychange', (event) => {
+        //console.log('mozbrowsersecuritychange', event.detail.state);
+      });
+      window['currentTab'] = currentTab;
+
+      var container = document.querySelector('#browser-iframe');
+      var root1 = container.createShadowRoot();
+      var root2 = container.createShadowRoot();
+      root1.appendChild(currentTab.iframe);
+      var shadow = document.createElement('shadow');
+      root2.appendChild(shadow);
+      document.addEventListener('keydown', this.methods.keyListener);
+    },
+    unmounted: function() {
+      this.$state.setState('target_url', '');
+      this.$router.hideLoading();
+      const sk = document.getElementById('__kai_soft_key__');
+      sk.classList.remove("sr-only");
+      const kr = document.getElementById('__kai_router__');
+      kr.classList.remove("full-screen-browser");
+      console.log('unmount browser');
+      navigator.spatialNavigationEnabled = false;
+      this.$router.setHeaderTitle('K-Pocket Browser');
+      document.removeEventListener('keydown', this.methods.keyListener);
+      if (window['IFRAME_SOFTKEY_TIMEOUT']) {
+        clearTimeout(window['IFRAME_SOFTKEY_TIMEOUT']);
+      }
+    },
+    methods: {
+      listenState: function(data) {
+        this.render()
+      },
+      keyListener: function(evt) {
+        if (document.activeElement.tagName !== 'IFRAME' || document.activeElement.tagName !== 'INPUT') {
+          console.log(evt.key);
+          switch (evt.key) {
+            case 'ArrowDown':
+            case 'ArrowUp':
+              const URL = document.getElementById('url-input');
+              URL.focus();
+              evt.preventDefault();
+              evt.stopPropagation();
+              break
+            case 'Call':
+              console.log('hide');
+              break
+            case '1':
+              if (this.data.zoom > 0.25) {
+                console.log('Before', this.data.zoom);
+                this.data.zoom -= 0.25;
+                window['currentTab'].iframe.zoom(this.data.zoom);
+                console.log('After', this.data.zoom);
+              }
+              break
+            case '2':
+              this.data.zoom = 1;
+              window['currentTab'].iframe.zoom(this.data.zoom);
+              break
+            case '3':
+              if (this.data.zoom < 3) {
+                console.log('Before', this.data.zoom);
+                this.data.zoom += 0.25;
+                window['currentTab'].iframe.zoom(this.data.zoom);
+                console.log('After', this.data.zoom);
+              }
+              break
+            case '0':
+              navigator.spatialNavigationEnabled = !navigator.spatialNavigationEnabled;
+              break
+          }
+        }
+      },
+      rightMenu: function() {
+        const sk = document.getElementById('__kai_soft_key__');
         if (document.activeElement.tagName === 'IFRAME') {
           document.activeElement.blur();
           console.log('remove OPTIONS sr-only & add DONE sr-only')
@@ -202,6 +334,7 @@ window.addEventListener("load", function() {
           document.getElementById('option-menu').classList.remove('sr-only');
           document.getElementById('done-btn').classList.add('sr-only');
         } else {
+          console.log(111111111111111111);
           window['currentTab'].getCanGoBack()
           .then((canBack) => {
             return Promise.resolve({canBack: canBack});
@@ -242,6 +375,7 @@ window.addEventListener("load", function() {
                   this.$router.pop();
                 }
               }, () => {
+                console.log(2222222222222222);
                 if (this.$router.stack[this.$router.stack.length - 1].name === 'browser') {
                   sk.classList.add("sr-only");
                   navigator.spatialNavigationEnabled = true;
@@ -257,52 +391,6 @@ window.addEventListener("load", function() {
             console.log(_err_);
           });
         }
-      });
-      currentTab.iframe.addEventListener('mozbrowserloadstart', (event) => {
-        document.getElementById('search-menu').classList.remove('sr-only');
-        document.getElementById('option-menu').classList.remove('sr-only');
-        document.getElementById('done-btn').classList.add('sr-only');
-        this.$router.showLoading(false);
-        this.data.loading = true;
-      });
-      currentTab.iframe.addEventListener('mozbrowserloadend', (event) => {
-        this.$router.hideLoading();
-        this.data.loading = false;
-      });
-      currentTab.iframe.addEventListener('mozbrowseropenwindow', (event) => {
-        //console.log('mozbrowseropenwindow', event);
-      });
-      currentTab.iframe.addEventListener('mozbrowseropentab', (event) => {
-        //console.log('mozbrowseropentab', event);
-      });
-      currentTab.iframe.addEventListener('mozbrowserscroll', (event) => {
-        //console.log('mozbrowserscroll', event);
-      });
-      currentTab.iframe.addEventListener('mozbrowsersecuritychange', (event) => {
-        //console.log('mozbrowsersecuritychange', event.detail.state);
-      });
-      window['currentTab'] = currentTab;
-
-      var container = document.querySelector('#browser-iframe');
-      var root1 = container.createShadowRoot();
-      var root2 = container.createShadowRoot();
-      root1.appendChild(currentTab.iframe);
-      var shadow = document.createElement('shadow');
-      root2.appendChild(shadow);
-    },
-    unmounted: function() {
-      this.$router.hideLoading();
-      const sk = document.getElementById('__kai_soft_key__');
-      sk.classList.remove("sr-only");
-      const kr = document.getElementById('__kai_router__');
-      kr.classList.remove("full-screen-browser");
-      console.log('unmount browser');
-      navigator.spatialNavigationEnabled = false;
-      this.$router.setHeaderTitle('K-Pocket Browser');
-    },
-    methods: {
-      listenState: function(data) {
-        this.render()
       }
     },
     softKeyText: { left: '', center: '', right: '' },
@@ -315,8 +403,8 @@ window.addEventListener("load", function() {
         urlDialog.mounted = () => {
           setTimeout(() => {
             const URL = document.getElementById('url-input');
-            URL.value = this.$state.getState('redirect_url');
             URL.focus();
+            URL.value = this.$state.getState('target_url');
             URL.addEventListener('keydown', (evt) => {
               switch (evt.key) {
                 case 'Backspace':
@@ -333,9 +421,14 @@ window.addEventListener("load", function() {
                 case 'SoftRight':
                   this.$router.hideBottomSheet();
                   sk.classList.add("sr-only");
-                  this.$state.setState('redirect_url', URL.value);
-                  console.log(this.$state.getState('redirect_url'));
-                  window['currentTab'].iframe.src = URL.value;
+                  
+                  var TARGET_URL = URL.value;
+                  if (!validURL(TARGET_URL)) {
+                    TARGET_URL = 'https://www.google.com/search?q=' + TARGET_URL;
+                  }
+                  this.$state.setState('target_url', TARGET_URL);
+                  console.log(this.$state.getState('target_url'));
+                  window['currentTab'].iframe.src = TARGET_URL;
                   setTimeout(() => {
                     URL.blur();
                     navigator.spatialNavigationEnabled = true;
@@ -356,7 +449,10 @@ window.addEventListener("load", function() {
         this.$router.showBottomSheet(urlDialog);
       },
       center: function() {},
-      right: function() {}
+      right: function() {
+        console.log('right');
+        this.methods.rightMenu();
+      }
     },
     backKeyListener: function() {
       window['currentTab'].getCanGoBack()
@@ -467,6 +563,9 @@ window.addEventListener("load", function() {
       },
       nextPage: function() {
         this.methods.loadArticles(this.data.offset);
+      },
+      selected: function() {
+        console.log(this.data.articles[this.verticalNavIndex]);
       }
     },
     softKeyText: { left: 'Menu', center: '', right: '' },
@@ -516,7 +615,30 @@ window.addEventListener("load", function() {
           nav[this.verticalNavIndex].click();
         }
       },
-      right: function() {}
+      right: function() {
+        var title = 'Menu';
+        var menu = [
+          { "text": "Open" },
+          { "text": "Delete" }
+        ];
+        this.$router.showOptionMenu(title, menu, 'Select', (selected) => {
+          if (selected.text === 'Open') {
+            var current = this.data.articles[this.verticalNavIndex];
+            this.$state.setState('target_url', current.given_url);
+            this.$router.push('browser');
+            console.log(current.given_url);
+          }
+          console.log(selected.text);
+        }, () => {
+          setTimeout(() => {
+            if (this.data.articles[this.verticalNavIndex].isArticle) {
+              this.$router.setSoftKeyRightText('More');
+            } else {
+              this.$router.setSoftKeyRightText('');
+            }
+          }, 100);
+        }, 0);
+      }
     },
     backKeyListener: function() {
       return false;
@@ -617,6 +739,7 @@ window.addEventListener("load", function() {
       const browser = app.$router.stack[app.$router.stack.length - 1];
       if (browser.name === 'browser') {
         if (document.activeElement.tagName !== 'IFRAME') {
+          navigator.spatialNavigationEnabled = true;
           document.getElementById('search-menu').classList.remove('sr-only');
           document.getElementById('option-menu').classList.remove('sr-only');
           document.getElementById('done-btn').classList.add('sr-only');
