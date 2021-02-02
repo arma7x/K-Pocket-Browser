@@ -233,10 +233,10 @@ window.addEventListener("load", function() {
       currentTab.iframe.addEventListener('mozbrowserloadend', (event) => {
         this.$router.hideLoading();
         this.data.loading = false;
-        window['IFRAME_SOFTKEY_TIMEOUT'] = setTimeout(() => {
-          document.getElementById('search-menu').classList.add('sr-only');
-          document.getElementById('option-menu').classList.add('sr-only');
-        }, 2000);
+        //window['IFRAME_SOFTKEY_TIMEOUT'] = setTimeout(() => {
+          //document.getElementById('search-menu').classList.add('sr-only');
+          //document.getElementById('option-menu').classList.add('sr-only');
+        //}, 2000);
       });
       currentTab.iframe.addEventListener('mozbrowseropenwindow', (event) => {
         //console.log('mozbrowseropenwindow', event);
@@ -245,16 +245,19 @@ window.addEventListener("load", function() {
         //console.log('mozbrowseropentab', event);
       });
       currentTab.iframe.addEventListener('mozbrowserscroll', (event) => {
-        document.getElementById('search-menu').classList.remove('sr-only');
-        document.getElementById('option-menu').classList.remove('sr-only');
-        clearTimeout(window['IFRAME_SOFTKEY_TIMEOUT']);
-        window['IFRAME_SOFTKEY_TIMEOUT'] = setTimeout(() => {
-          document.getElementById('search-menu').classList.add('sr-only');
-          document.getElementById('option-menu').classList.add('sr-only');
-        }, 2000);
+        document.getElementById('search-menu').classList.add('sr-only');
+        document.getElementById('option-menu').classList.add('sr-only');
+        //clearTimeout(window['IFRAME_SOFTKEY_TIMEOUT']);
+        //window['IFRAME_SOFTKEY_TIMEOUT'] = setTimeout(() => {
+          //document.getElementById('search-menu').classList.add('sr-only');
+          //document.getElementById('option-menu').classList.add('sr-only');
+        //}, 2000);
       });
       currentTab.iframe.addEventListener('mozbrowsersecuritychange', (event) => {
         //console.log('mozbrowsersecuritychange', event.detail.state);
+      });
+      currentTab.iframe.addEventListener('mozbrowsererror', (event) => {
+        console.log('mozbrowsererror', event);
       });
       window['currentTab'] = currentTab;
 
@@ -277,9 +280,9 @@ window.addEventListener("load", function() {
       navigator.spatialNavigationEnabled = false;
       this.$router.setHeaderTitle('K-Pocket Browser');
       document.removeEventListener('keydown', this.methods.keyListener);
-      if (window['IFRAME_SOFTKEY_TIMEOUT']) {
-        clearTimeout(window['IFRAME_SOFTKEY_TIMEOUT']);
-      }
+      //if (window['IFRAME_SOFTKEY_TIMEOUT']) {
+        //clearTimeout(window['IFRAME_SOFTKEY_TIMEOUT']);
+      //}
     },
     methods: {
       listenState: function(data) {
@@ -319,8 +322,14 @@ window.addEventListener("load", function() {
                 console.log('After', this.data.zoom);
               }
               break
-            case '0':
-              navigator.spatialNavigationEnabled = !navigator.spatialNavigationEnabled;
+            case '5':
+              if (document.getElementById('search-menu').classList.contains('sr-only')) {
+                document.getElementById('search-menu').classList.remove('sr-only');
+                document.getElementById('option-menu').classList.remove('sr-only');
+              } else {
+                document.getElementById('search-menu').classList.add('sr-only');
+                document.getElementById('option-menu').classList.add('sr-only');
+              }
               break
           }
         }
@@ -505,7 +514,7 @@ window.addEventListener("load", function() {
         .then((POCKET_ACCESS_TOKEN) => {
           if (POCKET_ACCESS_TOKEN != null) {
             this.$router.showLoading();
-            getPocketApi(POCKET_ACCESS_TOKEN.access_token, 'GET', { sort: 'newest', count: COUNT, offset: _offset })
+            getPocketApi(POCKET_ACCESS_TOKEN.access_token, 'GET', { state: 'all', sort: 'newest', count: COUNT, offset: _offset })
             .then((res) => {
               const listLength = Object.keys(res.response.list).length;
               if (listLength === 0) {
@@ -561,6 +570,52 @@ window.addEventListener("load", function() {
           }
         });
       },
+      deleteArticle: function() {
+        var current = this.data.articles[this.verticalNavIndex];
+        const params = [{
+          "action" : "delete",
+          "item_id" : current.item_id.toString(),
+        }];
+        this.$router.showDialog('Confirm', 'Are you sure to remove ' + current.resolved_title + ' ?', null, 'Yes', () => {
+          console.log(params);
+          const _this = this;
+          localforage.getItem('POCKET_ACCESS_TOKEN')
+          .then((POCKET_ACCESS_TOKEN) => {
+            if (POCKET_ACCESS_TOKEN != null) {
+              this.$router.showLoading();
+              getPocketApi(POCKET_ACCESS_TOKEN.access_token, 'UPDATE', {actions: params})
+              .then((res) => {
+                console.log(res);
+                const articles = _this.data.articles.filter((obj) => {
+                  if (!obj.isArticle) {
+                    return true;
+                  }
+                  return obj.item_id !== current.item_id.toString();
+                });
+                console.log(_this.data.articles.length, articles.length);
+                if (_this.verticalNavIndex >= articles.length) {
+                  _this.verticalNavIndex -= _this.verticalNavIndex;
+                }
+                _this.setData({ articles: articles, offset: (articles.length - 1) });
+              })
+              .catch((err) => {
+                console.log(err);
+              })
+              .finally(() => {
+                this.$router.hideLoading();
+              });
+            }
+          });
+        }, 'No', () => {}, '', () => {}, () => {
+          setTimeout(() => {
+            if (this.data.articles[this.verticalNavIndex].isArticle) {
+              this.$router.setSoftKeyRightText('More');
+            } else {
+              this.$router.setSoftKeyRightText('');
+            }
+          }, 100);
+        });
+      },
       nextPage: function() {
         this.methods.loadArticles(this.data.offset);
       },
@@ -583,7 +638,6 @@ window.addEventListener("load", function() {
             menu = [
               { "text": "Browser" },
               { "text": "Refresh" },
-              { "text": "Archive" },
               { "text": "Logout" }
             ];
           }
@@ -603,7 +657,15 @@ window.addEventListener("load", function() {
               this.setData({ articles: [] });
               this.methods.loadArticles(0);
             }
-          }, () => {}, 0);
+          }, () => {
+            setTimeout(() => {
+              if (this.data.articles[this.verticalNavIndex].isArticle) {
+                this.$router.setSoftKeyRightText('More');
+              } else {
+                this.$router.setSoftKeyRightText('');
+              }
+            }, 100);
+          }, 0);
         })
         .catch((err) => {
           console.log(err);
@@ -618,23 +680,35 @@ window.addEventListener("load", function() {
       right: function() {
         var title = 'Menu';
         var menu = [
-          { "text": "Open" },
+          { "text": "Open with built-in browser" },
+          { "text": "Open with KaiOS Browser" },
           { "text": "Delete" }
         ];
         this.$router.showOptionMenu(title, menu, 'Select', (selected) => {
-          if (selected.text === 'Open') {
+          if (selected.text === 'Open with built-in browser') {
             var current = this.data.articles[this.verticalNavIndex];
             this.$state.setState('target_url', current.given_url);
             this.$router.push('browser');
-            console.log(current.given_url);
+          } else if (selected.text === 'Open with KaiOS Browser') {
+            var current = this.data.articles[this.verticalNavIndex];
+            var activity = new MozActivity({
+              name: "view",
+              data: {
+                type: "url",
+                url: current.given_url
+              }
+            });
+          } else if (selected.text === 'Delete') {
+            this.methods.deleteArticle();
           }
-          console.log(selected.text);
         }, () => {
           setTimeout(() => {
-            if (this.data.articles[this.verticalNavIndex].isArticle) {
-              this.$router.setSoftKeyRightText('More');
-            } else {
-              this.$router.setSoftKeyRightText('');
+            if (!this.$router.bottomSheet) {
+              if (this.data.articles[this.verticalNavIndex].isArticle) {
+                this.$router.setSoftKeyRightText('More');
+              } else {
+                this.$router.setSoftKeyRightText('');
+              }
             }
           }, 100);
         }, 0);
