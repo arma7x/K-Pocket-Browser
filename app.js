@@ -356,6 +356,23 @@ window.addEventListener("load", function() {
             });
           })
           .then((menu) => {
+            return localforage.getItem('POCKET_BOOKMARKS')
+            .then((bookmarks) => {
+              menu.bookmark = false;
+              if (bookmarks == null) {
+                menu.bookmark = false;
+              } else {
+                const exist = bookmarks.filter((obj) => {
+                  return obj.url === window['currentTab'].url.url;
+                });
+                if (exist.length > 0) {
+                  menu.bookmark = true;
+                }
+              }
+              return Promise.resolve(menu);
+            });
+          })
+          .then((menu) => {
               var menus = [
                 { "text": "Refresh" },
               ];
@@ -367,6 +384,11 @@ window.addEventListener("load", function() {
               }
               if (this.data.loading) {
                 menus.push({ "text": "Stop" });
+              }
+              if (menu.bookmark) {
+                menus.push({ "text": "Remove Bookmark" });
+              } else {
+                menus.push({ "text": "Add Bookmark" });
               }
               menus.push({ "text": "Quit" });
               sk.classList.remove("sr-only");
@@ -380,9 +402,33 @@ window.addEventListener("load", function() {
                   window['currentTab'].iframe.goForward();
                 } else if (selected.text === 'Stop') {
                   window['currentTab'].iframe.stop();
+                } else if (selected.text === 'Add Bookmark') {
+                  var bookmark = {
+                    title: window['currentTab'].title,
+                    url: window['currentTab'].url.url
+                  }
+                  localforage.getItem('POCKET_BOOKMARKS')
+                  .then((bookmarks) => {
+                    if (bookmarks == null) {
+                      bookmarks = []
+                    }
+                    bookmarks.push(bookmark);
+                    localforage.setItem('POCKET_BOOKMARKS', bookmarks);
+                  });
+                } else if (selected.text === 'Remove Bookmark') {
+                  localforage.getItem('POCKET_BOOKMARKS')
+                  .then((bookmarks) => {
+                    if (bookmarks == null) {
+                      bookmarks = [];
+                    }
+                    const filtered = bookmarks.filter((obj) => {
+                      return obj.url !== window['currentTab'].url.url;
+                    });
+                    localforage.setItem('POCKET_BOOKMARKS', filtered);
+                  });
                 } else if (selected.text === 'Quit') {
                   this.$router.pop();
-                }
+                } 
               }, () => {
                 console.log(2222222222222222);
                 if (this.$router.stack[this.$router.stack.length - 1].name === 'browser') {
@@ -631,12 +677,16 @@ window.addEventListener("load", function() {
           var title = 'Menu';
           var menu = [
             { "text": "Login" },
-            { "text": "Browser" }
+            { "text": "Browser" },
+            { "text": "Bookmarks" },
+            { "text": "History" }
           ];
           if (res) {
             title = res.username;
             menu = [
               { "text": "Browser" },
+              { "text": "Bookmarks" },
+              { "text": "History" },
               { "text": "Refresh" },
               { "text": "Logout" }
             ];
@@ -656,13 +706,41 @@ window.addEventListener("load", function() {
               this.verticalNavIndex = 0;
               this.setData({ articles: [] });
               this.methods.loadArticles(0);
+            } else if (selected.text === 'Bookmarks') {
+              localforage.getItem('POCKET_BOOKMARKS')
+              .then((bookmarks) => {
+                if (bookmarks) {
+                  if (bookmarks.length > 0) {
+                    var b = [];
+                    bookmarks.forEach((i) => {
+                      b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "url": i.url });
+                    });
+                    this.$router.showOptionMenu('Bookmarks', b, 'Select', (selected) => {
+                      console.log(selected);
+                    }, () => {
+                      setTimeout(() => {
+                        if (!this.$router.bottomSheet) {
+                          if (this.data.articles[this.verticalNavIndex].isArticle) {
+                            this.$router.setSoftKeyRightText('More');
+                          } else {
+                            this.$router.setSoftKeyRightText('');
+                          }
+                        }
+                      }, 100);
+                    }, 0);
+                  }
+                  console.log(bookmarks);
+                }
+              });
             }
           }, () => {
             setTimeout(() => {
-              if (this.data.articles[this.verticalNavIndex].isArticle) {
-                this.$router.setSoftKeyRightText('More');
-              } else {
-                this.$router.setSoftKeyRightText('');
+              if (!this.$router.bottomSheet) {
+                if (this.data.articles[this.verticalNavIndex].isArticle) {
+                  this.$router.setSoftKeyRightText('More');
+                } else {
+                  this.$router.setSoftKeyRightText('');
+                }
               }
             }, 100);
           }, 0);
