@@ -92,7 +92,7 @@ window.addEventListener("load", function() {
               sk.classList.add("sr-only");
               const kr = document.getElementById('__kai_router__');
               kr.classList.add("full-screen-browser");
-              console.log('mount browser');
+              //console.log('mount browser');
               navigator.spatialNavigationEnabled = true;
               var frameContainer = document.getElementById('login-container');
               currentTab = new Tab(url);
@@ -106,7 +106,7 @@ window.addEventListener("load", function() {
               root2.appendChild(shadow);
               currentTab.iframe.addEventListener('mozbrowserlocationchange', function (e) {
                 if (e.detail.url === 'app://kpocket.arma7x.com/success.html') {
-                  console.log("REQUEST_TOKEN", REQUEST_TOKEN);
+                  //console.log("REQUEST_TOKEN", REQUEST_TOKEN);
                   var oauthAuthorize = new XMLHttpRequest({ mozSystem: true });
                   var params = {
                     "consumer_key": CONSUMER_KEY,
@@ -122,22 +122,22 @@ window.addEventListener("load", function() {
                         localforage.setItem('POCKET_ACCESS_TOKEN', obj)
                         .then((res) => {
                           $router.showToast('Successfully login');
-                          console.log(res);
+                          //console.log(res);
                         })
                         .catch((err) => {
                           $router.showToast('Error saving token');
-                          console.log(err);
+                          //console.log(err);
                         })
                         .finally(() => {
                           $router.pop();
                         });
                       } else {
-                        console.log(http);
+                        //console.log(http);
                         $router.showToast('Invalid response');
                         $router.pop();
                       }
                     } else if (oauthAuthorize.status == 403) {
-                      console.log(oauthAuthorize.status);
+                      //console.log(oauthAuthorize.status);
                       $router.showToast('Unauthorize 403');
                       $router.pop();
                     } else {
@@ -170,11 +170,11 @@ window.addEventListener("load", function() {
             backKeyListener: function() {}
           }));
         } else {
-          console.log(oauthRequest);
+          //console.log(oauthRequest);
         }
       } else {
         $router.hideLoading();
-        console.log(oauthRequest);
+        //console.log(oauthRequest);
       }
     }
     $router.showLoading();
@@ -194,7 +194,7 @@ window.addEventListener("load", function() {
       sk.classList.add("sr-only");
       const kr = document.getElementById('__kai_router__');
       kr.classList.add("full-screen-browser");
-      console.log('mount browser');
+      //console.log('mount browser');
       navigator.spatialNavigationEnabled = true;
       var frameContainer = document.getElementById('browser-iframe');
       var root = frameContainer.createShadowRoot();
@@ -211,12 +211,28 @@ window.addEventListener("load", function() {
       currentTab.iframe.addEventListener('mozbrowserlocationchange', (e) => {
         this.$state.setState('target_url', e.detail.url);
         this.$router.setHeaderTitle(e.detail.url);
+        localforage.getItem('POCKET_HISTORY')
+        .then((history) => {
+          if (history == null) {
+            history = [];
+          }
+          const _history = history.filter((obj) => {
+            return obj.url !== window['currentTab'].url.url;
+          });
+          _history.reverse();
+          _history.push({ title: window['currentTab'].title, url: window['currentTab'].url.url });
+          _history.reverse();
+          if (_history.length > 50) {
+            _history.pop();
+          }
+          localforage.setItem('POCKET_HISTORY', _history);
+        });
       });
       currentTab.iframe.addEventListener('mozbrowsercontextmenu', (event) => {
-        console.log('mozbrowsercontextmenu');
+        //console.log('mozbrowsercontextmenu');
         if (document.activeElement.tagName === 'IFRAME') {
           document.activeElement.blur();
-          console.log('remove OPTIONS sr-only & add DONE sr-only')
+          //console.log('remove OPTIONS sr-only & add DONE sr-only')
           document.getElementById('search-menu').classList.remove('sr-only');
           document.getElementById('option-menu').classList.remove('sr-only');
           document.getElementById('done-btn').classList.add('sr-only');
@@ -233,6 +249,16 @@ window.addEventListener("load", function() {
       currentTab.iframe.addEventListener('mozbrowserloadend', (event) => {
         this.$router.hideLoading();
         this.data.loading = false;
+        localforage.getItem('POCKET_HISTORY')
+        .then((history) => {
+          if (history == null) {
+            history = [];
+          }
+          if (history.length > 0) {
+            history[0].title = window['currentTab'].title;
+          }
+          localforage.setItem('POCKET_HISTORY', history);
+        });
         //window['IFRAME_SOFTKEY_TIMEOUT'] = setTimeout(() => {
           //document.getElementById('search-menu').classList.add('sr-only');
           //document.getElementById('option-menu').classList.add('sr-only');
@@ -257,7 +283,7 @@ window.addEventListener("load", function() {
         //console.log('mozbrowsersecuritychange', event.detail.state);
       });
       currentTab.iframe.addEventListener('mozbrowsererror', (event) => {
-        console.log('mozbrowsererror', event);
+        //console.log('mozbrowsererror', event);
       });
       window['currentTab'] = currentTab;
 
@@ -276,7 +302,7 @@ window.addEventListener("load", function() {
       sk.classList.remove("sr-only");
       const kr = document.getElementById('__kai_router__');
       kr.classList.remove("full-screen-browser");
-      console.log('unmount browser');
+      //console.log('unmount browser');
       navigator.spatialNavigationEnabled = false;
       this.$router.setHeaderTitle('K-Pocket Browser');
       document.removeEventListener('keydown', this.methods.keyListener);
@@ -290,7 +316,7 @@ window.addEventListener("load", function() {
       },
       keyListener: function(evt) {
         if (document.activeElement.tagName !== 'IFRAME' || document.activeElement.tagName !== 'INPUT') {
-          console.log(evt.key);
+          //console.log(evt.key);
           switch (evt.key) {
             case 'ArrowDown':
             case 'ArrowUp':
@@ -299,15 +325,10 @@ window.addEventListener("load", function() {
               evt.preventDefault();
               evt.stopPropagation();
               break
-            case 'Call':
-              console.log('hide');
-              break
             case '1':
               if (this.data.zoom > 0.25) {
-                console.log('Before', this.data.zoom);
                 this.data.zoom -= 0.25;
                 window['currentTab'].iframe.zoom(this.data.zoom);
-                console.log('After', this.data.zoom);
               }
               break
             case '2':
@@ -316,10 +337,8 @@ window.addEventListener("load", function() {
               break
             case '3':
               if (this.data.zoom < 3) {
-                console.log('Before', this.data.zoom);
                 this.data.zoom += 0.25;
                 window['currentTab'].iframe.zoom(this.data.zoom);
-                console.log('After', this.data.zoom);
               }
               break
             case '5':
@@ -338,12 +357,11 @@ window.addEventListener("load", function() {
         const sk = document.getElementById('__kai_soft_key__');
         if (document.activeElement.tagName === 'IFRAME') {
           document.activeElement.blur();
-          console.log('remove OPTIONS sr-only & add DONE sr-only')
+          //console.log('remove OPTIONS sr-only & add DONE sr-only')
           document.getElementById('search-menu').classList.remove('sr-only');
           document.getElementById('option-menu').classList.remove('sr-only');
           document.getElementById('done-btn').classList.add('sr-only');
         } else {
-          console.log(111111111111111111);
           window['currentTab'].getCanGoBack()
           .then((canBack) => {
             return Promise.resolve({canBack: canBack});
@@ -374,7 +392,7 @@ window.addEventListener("load", function() {
           })
           .then((menu) => {
               var menus = [
-                { "text": "Refresh" },
+                { "text": "Refresh" }
               ];
               if (menu.canBack) {
                 menus.push({ "text": "Go Back" });
@@ -390,6 +408,9 @@ window.addEventListener("load", function() {
               } else {
                 menus.push({ "text": "Add Bookmark" });
               }
+              menus.push({ "text": "Bookmarks" });
+              menus.push({ "text": "History" });
+              menus.push({ "text": "Clear History" });
               menus.push({ "text": "Quit" });
               sk.classList.remove("sr-only");
               navigator.spatialNavigationEnabled = false;
@@ -414,6 +435,7 @@ window.addEventListener("load", function() {
                     }
                     bookmarks.push(bookmark);
                     localforage.setItem('POCKET_BOOKMARKS', bookmarks);
+                    this.$router.showToast('Added');
                   });
                 } else if (selected.text === 'Remove Bookmark') {
                   localforage.getItem('POCKET_BOOKMARKS')
@@ -425,25 +447,96 @@ window.addEventListener("load", function() {
                       return obj.url !== window['currentTab'].url.url;
                     });
                     localforage.setItem('POCKET_BOOKMARKS', filtered);
+                    this.$router.showToast('Removed');
                   });
                 } else if (selected.text === 'Quit') {
                   this.$router.pop();
-                } 
+                } else if (selected.text === 'Bookmarks') {
+                  localforage.getItem('POCKET_BOOKMARKS')
+                  .then((bookmarks) => {
+                    if (bookmarks) {
+                      if (bookmarks.length > 0) {
+                        var b = [];
+                        bookmarks.forEach((i) => {
+                          b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
+                        });
+                        this.$router.showOptionMenu('Bookmarks', b, 'OPEN', (selected) => {
+                          this.$state.setState('target_url', selected.subtext);
+                          window['currentTab'].iframe.src = selected.subtext;
+                        }, () => {
+                          if (this.$router.stack[this.$router.stack.length - 1].name === 'browser') {
+                            sk.classList.add("sr-only");
+                            navigator.spatialNavigationEnabled = true;
+                          } else if (this.$router.stack.length > 2) {
+                            if (this.$router.stack[this.$router.stack.length - 2].name === 'browser') {
+                              sk.classList.add("sr-only");
+                              navigator.spatialNavigationEnabled = true;
+                            }
+                          }
+                        }, 0);
+                      }
+                    }
+                  });
+                } else if (selected.text === 'History') {
+                  localforage.getItem('POCKET_HISTORY')
+                  .then((history) => {
+                    if (history) {
+                      if (history.length > 0) {
+                        var b = [];
+                        history.forEach((i) => {
+                          b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
+                        });
+                        this.$router.showOptionMenu('History', b, 'OPEN', (selected) => {
+                          this.$state.setState('target_url', selected.subtext);
+                          window['currentTab'].iframe.src = selected.subtext;
+                        }, () => {
+                          if (this.$router.stack[this.$router.stack.length - 1].name === 'browser') {
+                            sk.classList.add("sr-only");
+                            navigator.spatialNavigationEnabled = true;
+                          } else if (this.$router.stack.length > 2) {
+                            if (this.$router.stack[this.$router.stack.length - 2].name === 'browser') {
+                              sk.classList.add("sr-only");
+                              navigator.spatialNavigationEnabled = true;
+                            }
+                          }
+                        }, 0);
+                      }
+                    }
+                  });
+                } else if (selected.text === 'Clear History') {
+                  this.$router.showDialog('Confirm', 'Are you sure to clear history ?', null, 'Yes', () => {
+                    localforage.removeItem('POCKET_HISTORY')
+                    this.$router.showToast('History Cleared');
+                  }, 'No', () => {}, '', () => {}, () => {
+                    if (this.$router.stack[this.$router.stack.length - 1].name === 'browser') {
+                      sk.classList.add("sr-only");
+                      navigator.spatialNavigationEnabled = true;
+                    } else if (this.$router.stack.length > 2) {
+                      if (this.$router.stack[this.$router.stack.length - 2].name === 'browser') {
+                        sk.classList.add("sr-only");
+                        navigator.spatialNavigationEnabled = true;
+                      }
+                    }
+                  });
+                }
               }, () => {
-                console.log(2222222222222222);
-                if (this.$router.stack[this.$router.stack.length - 1].name === 'browser') {
-                  sk.classList.add("sr-only");
-                  navigator.spatialNavigationEnabled = true;
-                } else if (this.$router.stack.length > 2) {
-                  if (this.$router.stack[this.$router.stack.length - 2].name === 'browser') {
+                setTimeout(() => {
+                  if (this.$router.stack[this.$router.stack.length - 1].name === 'browser' && !this.$router.bottomSheet) {
                     sk.classList.add("sr-only");
                     navigator.spatialNavigationEnabled = true;
+                    console.log(1234);
+                  } else if (this.$router.stack.length > 2 && !this.$router.bottomSheet) {
+                    console.log(5678);
+                    if (this.$router.stack[this.$router.stack.length - 2].name === 'browser') {
+                      sk.classList.add("sr-only");
+                      navigator.spatialNavigationEnabled = true;
+                    }
                   }
-                }
+                }, 100);
               }, 0);
           })
           .catch((_err_) => {
-            console.log(_err_);
+            //console.log(_err_);
           });
         }
       }
@@ -458,6 +551,9 @@ window.addEventListener("load", function() {
         urlDialog.mounted = () => {
           setTimeout(() => {
             const URL = document.getElementById('url-input');
+            if (!URL) {
+              return;
+            }
             URL.focus();
             URL.value = this.$state.getState('target_url');
             URL.addEventListener('keydown', (evt) => {
@@ -482,7 +578,6 @@ window.addEventListener("load", function() {
                     TARGET_URL = 'https://www.google.com/search?q=' + TARGET_URL;
                   }
                   this.$state.setState('target_url', TARGET_URL);
-                  console.log(this.$state.getState('target_url'));
                   window['currentTab'].iframe.src = TARGET_URL;
                   setTimeout(() => {
                     URL.blur();
@@ -505,7 +600,6 @@ window.addEventListener("load", function() {
       },
       center: function() {},
       right: function() {
-        console.log('right');
         this.methods.rightMenu();
       }
     },
@@ -534,7 +628,6 @@ window.addEventListener("load", function() {
     verticalNavClass: '.homepageNav',
     templateUrl: document.location.origin + '/templates/homepage.html',
     mounted: function() {
-      console.log('homepage mount');
       navigator.spatialNavigationEnabled = false;
       localforage.getItem('POCKET_ACCESS_TOKEN')
       .then((POCKET_ACCESS_TOKEN) => {
@@ -550,9 +643,7 @@ window.addEventListener("load", function() {
         }
       });
     },
-    unmounted: function() {
-      console.log('homepage unmount')
-    },
+    unmounted: function() {},
     methods: {
       loadArticles: function(_offset) {
         const _this = this;
@@ -602,13 +693,10 @@ window.addEventListener("load", function() {
                   _this.$router.setSoftKeyRightText('');
                   _this.setData({ empty: true });
                 }
-                //_this.setData({ empty: true });
-                //_this.setData({ articles: [] });
-                console.log(_this.data.articles);
               }
             })
             .catch((err) => {
-              console.log(err);
+              //console.log(err);
             })
             .finally(() => {
               this.$router.hideLoading();
@@ -623,7 +711,6 @@ window.addEventListener("load", function() {
           "item_id" : current.item_id.toString(),
         }];
         this.$router.showDialog('Confirm', 'Are you sure to remove ' + current.resolved_title + ' ?', null, 'Yes', () => {
-          console.log(params);
           const _this = this;
           localforage.getItem('POCKET_ACCESS_TOKEN')
           .then((POCKET_ACCESS_TOKEN) => {
@@ -631,21 +718,19 @@ window.addEventListener("load", function() {
               this.$router.showLoading();
               getPocketApi(POCKET_ACCESS_TOKEN.access_token, 'UPDATE', {actions: params})
               .then((res) => {
-                console.log(res);
                 const articles = _this.data.articles.filter((obj) => {
                   if (!obj.isArticle) {
                     return true;
                   }
                   return obj.item_id !== current.item_id.toString();
                 });
-                console.log(_this.data.articles.length, articles.length);
                 if (_this.verticalNavIndex >= articles.length) {
                   _this.verticalNavIndex -= _this.verticalNavIndex;
                 }
                 _this.setData({ articles: articles, offset: (articles.length - 1) });
               })
               .catch((err) => {
-                console.log(err);
+                //console.log(err);
               })
               .finally(() => {
                 this.$router.hideLoading();
@@ -666,7 +751,7 @@ window.addEventListener("load", function() {
         this.methods.loadArticles(this.data.offset);
       },
       selected: function() {
-        console.log(this.data.articles[this.verticalNavIndex]);
+        //console.log(this.data.articles[this.verticalNavIndex]);
       }
     },
     softKeyText: { left: 'Menu', center: '', right: '' },
@@ -677,24 +762,26 @@ window.addEventListener("load", function() {
           var title = 'Menu';
           var menu = [
             { "text": "Login" },
-            { "text": "Browser" },
+            { "text": "Web Browser" },
             { "text": "Bookmarks" },
-            { "text": "History" }
+            { "text": "History" },
+            { "text": "Clear History" }
           ];
           if (res) {
             title = res.username;
             menu = [
-              { "text": "Browser" },
+              { "text": "Refresh" },
+              { "text": "Web Browser" },
               { "text": "Bookmarks" },
               { "text": "History" },
-              { "text": "Refresh" },
+              { "text": "Clear History" },
               { "text": "Logout" }
             ];
           }
           this.$router.showOptionMenu(title, menu, 'Select', (selected) => {
             if (selected.text === 'Login') {
               loginPage(this.$router);
-            } else if (selected.text === 'Browser') {
+            } else if (selected.text === 'Web Browser') {
               this.$router.push('browser');
             } else if (selected.text === 'Logout') {
               localforage.removeItem('POCKET_ACCESS_TOKEN');
@@ -713,10 +800,13 @@ window.addEventListener("load", function() {
                   if (bookmarks.length > 0) {
                     var b = [];
                     bookmarks.forEach((i) => {
-                      b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "url": i.url });
+                      b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
                     });
-                    this.$router.showOptionMenu('Bookmarks', b, 'Select', (selected) => {
-                      console.log(selected);
+                    this.$router.showOptionMenu('Bookmarks', b, 'OPEN', (selected) => {
+                      this.$state.setState('target_url', selected.subtext);
+                      setTimeout(() => {
+                        this.$router.push('browser');
+                      }, 100);
                     }, () => {
                       setTimeout(() => {
                         if (!this.$router.bottomSheet) {
@@ -729,8 +819,48 @@ window.addEventListener("load", function() {
                       }, 100);
                     }, 0);
                   }
-                  console.log(bookmarks);
                 }
+              });
+            } else if (selected.text === 'History') {
+              localforage.getItem('POCKET_HISTORY')
+              .then((history) => {
+                if (history) {
+                  if (history.length > 0) {
+                    var b = [];
+                    history.forEach((i) => {
+                      b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
+                    });
+                    this.$router.showOptionMenu('History', b, 'OPEN', (selected) => {
+                      this.$state.setState('target_url', selected.subtext);
+                      setTimeout(() => {
+                        this.$router.push('browser');
+                      }, 100);
+                    }, () => {
+                      setTimeout(() => {
+                        if (!this.$router.bottomSheet) {
+                          if (this.data.articles[this.verticalNavIndex].isArticle) {
+                            this.$router.setSoftKeyRightText('More');
+                          } else {
+                            this.$router.setSoftKeyRightText('');
+                          }
+                        }
+                      }, 100);
+                    }, 0);
+                  }
+                }
+              });
+            } else if (selected.text === 'Clear History') {
+              this.$router.showDialog('Confirm', 'Are you sure to clear history ?', null, 'Yes', () => {
+                localforage.removeItem('POCKET_HISTORY')
+                this.$router.showToast('History Cleared');
+              }, 'No', () => {}, '', () => {}, () => {
+                setTimeout(() => {
+                  if (this.data.articles[this.verticalNavIndex].isArticle) {
+                    this.$router.setSoftKeyRightText('More');
+                  } else {
+                    this.$router.setSoftKeyRightText('');
+                  }
+                }, 100);
               });
             }
           }, () => {
@@ -746,7 +876,7 @@ window.addEventListener("load", function() {
           }, 0);
         })
         .catch((err) => {
-          console.log(err);
+          //console.log(err);
         });
       },
       center: function() {
@@ -846,10 +976,10 @@ window.addEventListener("load", function() {
     data: {},
     templateUrl: document.location.origin + '/templates/template.html',
     mounted: function() {
-      console.log('_APP_ mounted');
+      //console.log('_APP_ mounted');
     },
     unmounted: function() {
-      console.log('_APP_ unmounted');
+      //console.log('_APP_ unmounted');
     },
     router,
     state
@@ -858,7 +988,7 @@ window.addEventListener("load", function() {
   try {
     app.mount('app');
   } catch(e) {
-    console.log(e);
+    //console.log(e);
   }
 
   IFRAME_TIMER = setInterval(() => {
@@ -872,7 +1002,7 @@ window.addEventListener("load", function() {
   }, 500);
 
   document.addEventListener('visibilitychange', () => {
-    console.log(`Tab state : ${document.visibilityState}`);
+    //console.log(`Tab state : ${document.visibilityState}`);
     if (app.$router.stack.length === 1) {
       setTimeout(() => {
         navigator.spatialNavigationEnabled = false;
