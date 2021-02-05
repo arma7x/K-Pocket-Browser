@@ -34,18 +34,15 @@ self.addEventListener('fetch', event => {
   // Skip cross-origin requests, like those for Google Analytics.
   const regex = new RegExp(/([a-z\-_0-9\/\:\.]*\.(jpg|jpeg|png|gif|webp|svg))/i);
   if (event.request.url.match(regex) !== null) {
-    console.log(event.request.url);
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {
         if (cachedResponse) {
-          console.log('from cache');
           return cachedResponse;
         }
         return caches.open(RUNTIME).then(cache => {
           return fetch(event.request).then(response => {
             // Put a copy of the response in the runtime cache.
             return cache.put(event.request, response.clone()).then(() => {
-              console.log('from response');
               return response;
             });
           });

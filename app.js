@@ -92,13 +92,12 @@ window.addEventListener("load", function() {
               sk.classList.add("sr-only");
               const kr = document.getElementById('__kai_router__');
               kr.classList.add("full-screen-browser");
-              //console.log('mount browser');
               navigator.spatialNavigationEnabled = true;
               var frameContainer = document.getElementById('login-container');
               currentTab = new Tab(url);
               currentTab.iframe.setAttribute('height', '296px;');
               currentTab.iframe.setAttribute('frameBorder', '0');
-              var container = document.querySelector('#login-container'); //browser-iframe
+              var container = document.querySelector('#login-container');
               var root1 = container.createShadowRoot();
               var root2 = container.createShadowRoot();
               root1.appendChild(currentTab.iframe);
@@ -106,7 +105,6 @@ window.addEventListener("load", function() {
               root2.appendChild(shadow);
               currentTab.iframe.addEventListener('mozbrowserlocationchange', function (e) {
                 if (e.detail.url === 'app://kpocket.arma7x.com/success.html') {
-                  //console.log("REQUEST_TOKEN", REQUEST_TOKEN);
                   var oauthAuthorize = new XMLHttpRequest({ mozSystem: true });
                   var params = {
                     "consumer_key": CONSUMER_KEY,
@@ -122,22 +120,18 @@ window.addEventListener("load", function() {
                         localforage.setItem('POCKET_ACCESS_TOKEN', obj)
                         .then((res) => {
                           $router.showToast('Successfully login');
-                          //console.log(res);
                         })
                         .catch((err) => {
                           $router.showToast('Error saving token');
-                          //console.log(err);
                         })
                         .finally(() => {
                           $router.pop();
                         });
                       } else {
-                        //console.log(http);
                         $router.showToast('Invalid response');
                         $router.pop();
                       }
                     } else if (oauthAuthorize.status == 403) {
-                      //console.log(oauthAuthorize.status);
                       $router.showToast('Unauthorize 403');
                       $router.pop();
                     } else {
@@ -174,7 +168,6 @@ window.addEventListener("load", function() {
         }
       } else {
         $router.hideLoading();
-        //console.log(oauthRequest);
       }
     }
     $router.showLoading();
@@ -194,7 +187,6 @@ window.addEventListener("load", function() {
       sk.classList.add("sr-only");
       const kr = document.getElementById('__kai_router__');
       kr.classList.add("full-screen-browser");
-      //console.log('mount browser');
       navigator.spatialNavigationEnabled = true;
       var frameContainer = document.getElementById('browser-iframe');
       var root = frameContainer.createShadowRoot();
@@ -229,15 +221,12 @@ window.addEventListener("load", function() {
         });
       });
       currentTab.iframe.addEventListener('mozbrowsercontextmenu', (event) => {
-        //console.log('mozbrowsercontextmenu');
         if (document.activeElement.tagName === 'IFRAME') {
           document.activeElement.blur();
-          //console.log('remove OPTIONS sr-only & add DONE sr-only')
           document.getElementById('search-menu').classList.remove('sr-only');
           document.getElementById('option-menu').classList.remove('sr-only');
           document.getElementById('done-btn').classList.add('sr-only');
         }
-        //this.methods.rightMenu();
       });
       currentTab.iframe.addEventListener('mozbrowserloadstart', (event) => {
         document.getElementById('search-menu').classList.remove('sr-only');
@@ -259,25 +248,10 @@ window.addEventListener("load", function() {
           }
           localforage.setItem('POCKET_HISTORY', history);
         });
-        //window['IFRAME_SOFTKEY_TIMEOUT'] = setTimeout(() => {
-          //document.getElementById('search-menu').classList.add('sr-only');
-          //document.getElementById('option-menu').classList.add('sr-only');
-        //}, 2000);
-      });
-      currentTab.iframe.addEventListener('mozbrowseropenwindow', (event) => {
-        //console.log('mozbrowseropenwindow', event);
-      });
-      currentTab.iframe.addEventListener('mozbrowseropentab', (event) => {
-        //console.log('mozbrowseropentab', event);
       });
       currentTab.iframe.addEventListener('mozbrowserscroll', (event) => {
         document.getElementById('search-menu').classList.add('sr-only');
         document.getElementById('option-menu').classList.add('sr-only');
-        //clearTimeout(window['IFRAME_SOFTKEY_TIMEOUT']);
-        //window['IFRAME_SOFTKEY_TIMEOUT'] = setTimeout(() => {
-          //document.getElementById('search-menu').classList.add('sr-only');
-          //document.getElementById('option-menu').classList.add('sr-only');
-        //}, 2000);
       });
       currentTab.iframe.addEventListener('mozbrowsersecuritychange', (event) => {
         //console.log('mozbrowsersecuritychange', event.detail.state);
@@ -302,13 +276,9 @@ window.addEventListener("load", function() {
       sk.classList.remove("sr-only");
       const kr = document.getElementById('__kai_router__');
       kr.classList.remove("full-screen-browser");
-      //console.log('unmount browser');
       navigator.spatialNavigationEnabled = false;
       this.$router.setHeaderTitle('K-Pocket Browser');
       document.removeEventListener('keydown', this.methods.keyListener);
-      //if (window['IFRAME_SOFTKEY_TIMEOUT']) {
-        //clearTimeout(window['IFRAME_SOFTKEY_TIMEOUT']);
-      //}
     },
     methods: {
       listenState: function(data) {
@@ -316,7 +286,6 @@ window.addEventListener("load", function() {
       },
       keyListener: function(evt) {
         if (document.activeElement.tagName !== 'IFRAME' || document.activeElement.tagName !== 'INPUT') {
-          //console.log(evt.key);
           switch (evt.key) {
             case 'ArrowDown':
             case 'ArrowUp':
@@ -357,7 +326,6 @@ window.addEventListener("load", function() {
         const sk = document.getElementById('__kai_soft_key__');
         if (document.activeElement.tagName === 'IFRAME') {
           document.activeElement.blur();
-          //console.log('remove OPTIONS sr-only & add DONE sr-only')
           document.getElementById('search-menu').classList.remove('sr-only');
           document.getElementById('option-menu').classList.remove('sr-only');
           document.getElementById('done-btn').classList.add('sr-only');
@@ -750,9 +718,7 @@ window.addEventListener("load", function() {
       nextPage: function() {
         this.methods.loadArticles(this.data.offset);
       },
-      selected: function() {
-        //console.log(this.data.articles[this.verticalNavIndex]);
-      }
+      selected: function() {}
     },
     softKeyText: { left: 'Menu', center: '', right: '' },
     softKeyListener: {
@@ -937,9 +903,7 @@ window.addEventListener("load", function() {
           this.$router.setSoftKeyRightText('');
         }
       },
-      arrowRight: function() {
-        // this.navigateTabNav(-1);
-      },
+      arrowRight: function() {},
       arrowDown: function() {
         if (this.verticalNavIndex === (this.data.articles.length - 1)) {
           return;
@@ -951,9 +915,7 @@ window.addEventListener("load", function() {
           this.$router.setSoftKeyRightText('');
         }
       },
-      arrowLeft: function() {
-        // this.navigateTabNav(1);
-      },
+      arrowLeft: function() {},
     }
   });
 
@@ -975,12 +937,8 @@ window.addEventListener("load", function() {
     name: '_APP_',
     data: {},
     templateUrl: document.location.origin + '/templates/template.html',
-    mounted: function() {
-      //console.log('_APP_ mounted');
-    },
-    unmounted: function() {
-      //console.log('_APP_ unmounted');
-    },
+    mounted: function() {},
+    unmounted: function() {},
     router,
     state
   });
@@ -992,7 +950,6 @@ window.addEventListener("load", function() {
   }
 
   IFRAME_TIMER = setInterval(() => {
-    //console.log('OUTER', document.activeElement.tagName);
     if (document.activeElement.tagName === 'IFRAME') {
       navigator.spatialNavigationEnabled = true;
       document.getElementById('search-menu').classList.add('sr-only');
@@ -1002,7 +959,6 @@ window.addEventListener("load", function() {
   }, 500);
 
   document.addEventListener('visibilitychange', () => {
-    //console.log(`Tab state : ${document.visibilityState}`);
     if (app.$router.stack.length === 1) {
       setTimeout(() => {
         navigator.spatialNavigationEnabled = false;
@@ -1028,7 +984,6 @@ window.addEventListener("load", function() {
         }
       }
       IFRAME_TIMER = setInterval(() => {
-        //console.log('INNER', document.activeElement.tagName);
         if (document.activeElement.tagName === 'IFRAME') {
           navigator.spatialNavigationEnabled = true;
           document.getElementById('search-menu').classList.add('sr-only');
@@ -1039,22 +994,14 @@ window.addEventListener("load", function() {
     }
   });
 
-  window.addEventListener('keydown', () => {
-    //console.log('keydown window');
-  }, true);
-
-  document.addEventListener('keydown', () => {
-    //console.log('keydown document');
-  }, true);
-
 });
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
   .then(function(swReg) {
-    console.error('Service Worker Registered');
+    // console.error('Service Worker Registered');
   })
   .catch(function(error) {
-    console.error('Service Worker Error', error);
+    // console.error('Service Worker Error', error);
   });
 }
