@@ -1,6 +1,6 @@
 {
   "name": "K-Pocket Browser",
-  "description": "Unoffical GetPocket client & Web Browser for KaiOS",
+  "description": "Web Browser & Unoffical GetPocket client for KaiOS",
   "launch_path": "/index.html",
   "theme": "#873eff",
   "theme_color": "#873eff",

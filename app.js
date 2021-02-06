@@ -727,6 +727,7 @@ window.addEventListener("load", function() {
         .then((res) => {
           var title = 'Menu';
           var menu = [
+            { "text": "Shortcut Key" },
             { "text": "Login" },
             { "text": "Web Browser" },
             { "text": "Bookmarks" },
@@ -736,6 +737,7 @@ window.addEventListener("load", function() {
           if (res) {
             title = res.username;
             menu = [
+              { "text": "Shortcut Key" },
               { "text": "Refresh" },
               { "text": "Web Browser" },
               { "text": "Bookmarks" },
@@ -820,6 +822,16 @@ window.addEventListener("load", function() {
                 localforage.removeItem('POCKET_HISTORY')
                 this.$router.showToast('History Cleared');
               }, 'No', () => {}, '', () => {}, () => {
+                setTimeout(() => {
+                  if (this.data.articles[this.verticalNavIndex].isArticle) {
+                    this.$router.setSoftKeyRightText('More');
+                  } else {
+                    this.$router.setSoftKeyRightText('');
+                  }
+                }, 100);
+              });
+            } else if (selected.text ===  'Shortcut Key') {
+              this.$router.showDialog('Shortcut Key', '* 1 Zoom-out<br> * 2 Reset zoom<br> * 3 Zoom-in<br> * 5 Hide/Show menu', null, 'OK', () => {}, ' ', () => {}, ' ', () => {}, () => {
                 setTimeout(() => {
                   if (this.data.articles[this.verticalNavIndex].isArticle) {
                     this.$router.setSoftKeyRightText('More');
