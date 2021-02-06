@@ -1,4 +1,5 @@
 {
+  "version": "1.0.0",
   "name": "K-Pocket Browser",
   "description": "Web Browser & Unoffical GetPocket client for KaiOS",
   "launch_path": "/index.html",
@@ -33,6 +34,14 @@
       "description": "Required to load remote content"
     }
   },
+  "locales": {
+    "en-US": {
+      "name": "K-Pocket Browser",
+      "subtitle": "Web Browser & Unoffical GetPocket client for KaiOS",
+      "description": "Web Browser & Unoffical GetPocket client for KaiOS"
+    }
+  },
+  "default_locale": "en-US",
   "redirects": [
     {
       "from": "https://getpocket.com/about",
