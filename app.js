@@ -290,6 +290,9 @@ window.addEventListener("load", function() {
             case 'ArrowDown':
             case 'ArrowUp':
               const URL = document.getElementById('url-input');
+              if (URL == null) {
+                break
+              }
               URL.focus();
               evt.preventDefault();
               evt.stopPropagation();
@@ -359,9 +362,22 @@ window.addEventListener("load", function() {
             });
           })
           .then((menu) => {
+            return localforage.getItem('POCKET_ACCESS_TOKEN')
+            .then((res) => {
+              menu.isLoggedIn = false;
+              if (res != null) {
+                menu.isLoggedIn = true;
+              }
+              return Promise.resolve(menu);
+            })
+          })
+          .then((menu) => {
               var menus = [
                 { "text": "Refresh" }
               ];
+              if (menu.isLoggedIn) {
+                menus.push({ "text": "Save to GetPocket" });
+              }
               if (menu.canBack) {
                 menus.push({ "text": "Go Back" });
               }
@@ -391,6 +407,31 @@ window.addEventListener("load", function() {
                   window['currentTab'].iframe.goForward();
                 } else if (selected.text === 'Stop') {
                   window['currentTab'].iframe.stop();
+                } else if (selected.text === 'Save to GetPocket') {
+                  this.$router.showLoading(false);
+                  localforage.getItem('POCKET_ACCESS_TOKEN')
+                  .then((POCKET_ACCESS_TOKEN) => {
+                    if (POCKET_ACCESS_TOKEN != null) {
+                      getPocketApi(POCKET_ACCESS_TOKEN.access_token, 'GET', { search: this.$state.getState('target_url') })
+                      .then((res) => {
+                        if (Object.keys(res.response.list).length > 0) {
+                          this.$router.showToast('Already saved to GetPocket');
+                        } else {
+                          this.$router.showLoading(false);
+                          getPocketApi(POCKET_ACCESS_TOKEN.access_token, 'ADD', { url: this.$state.getState('target_url') })
+                          .then((res) => {
+                            this.$router.showToast('Saved to GetPocket');
+                          })
+                          .finally(() => {
+                            this.$router.hideLoading(false);
+                          })
+                        }
+                      })
+                    }
+                  })
+                  .finally(() => {
+                    this.$router.hideLoading(false);
+                  })
                 } else if (selected.text === 'Add Bookmark') {
                   var bookmark = {
                     title: window['currentTab'].title,
@@ -492,9 +533,7 @@ window.addEventListener("load", function() {
                   if (this.$router.stack[this.$router.stack.length - 1].name === 'browser' && !this.$router.bottomSheet) {
                     sk.classList.add("sr-only");
                     navigator.spatialNavigationEnabled = true;
-                    console.log(1234);
                   } else if (this.$router.stack.length > 2 && !this.$router.bottomSheet) {
-                    console.log(5678);
                     if (this.$router.stack[this.$router.stack.length - 2].name === 'browser') {
                       sk.classList.add("sr-only");
                       navigator.spatialNavigationEnabled = true;
@@ -727,7 +766,7 @@ window.addEventListener("load", function() {
         .then((res) => {
           var title = 'Menu';
           var menu = [
-            { "text": "Shortcut Key" },
+            { "text": "Help & Support" },
             { "text": "Login" },
             { "text": "Web Browser" },
             { "text": "Bookmarks" },
@@ -737,7 +776,7 @@ window.addEventListener("load", function() {
           if (res) {
             title = res.username;
             menu = [
-              { "text": "Shortcut Key" },
+              { "text": "Help & Support" },
               { "text": "Refresh" },
               { "text": "Web Browser" },
               { "text": "Bookmarks" },
@@ -830,8 +869,8 @@ window.addEventListener("load", function() {
                   }
                 }, 100);
               });
-            } else if (selected.text ===  'Shortcut Key') {
-              this.$router.showDialog('Shortcut Key', '* 1 Zoom-out<br> * 2 Reset zoom<br> * 3 Zoom-in<br> * 5 Hide/Show menu', null, 'OK', () => {}, ' ', () => {}, ' ', () => {}, () => {
+            } else if (selected.text ===  'Help & Support') {
+              this.$router.showDialog('Help & Support', '<b>NOTICE</b><br>* Save button within the https://getpocket.com/explore is not working. Please use `Save to GetPocket` to save website you visit to your GetPocket account<br><br> <b>Shortcut Key</b><br>* 1 Zoom-out<br> * 2 Reset zoom<br> * 3 Zoom-in<br> * 5 Hide/Show menu', null, 'OK', () => {}, ' ', () => {}, ' ', () => {}, () => {
                 setTimeout(() => {
                   if (this.data.articles[this.verticalNavIndex].isArticle) {
                     this.$router.setSoftKeyRightText('More');
