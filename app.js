@@ -67,7 +67,7 @@ window.addEventListener("load", function() {
     var oauthRequest = new XMLHttpRequest({ mozSystem: true });
     var params = {
       "consumer_key": CONSUMER_KEY,
-      "redirect_uri": "https://getpocket.com/about"
+      "redirect_uri": "https://getpocket.com/en/about"
     };
     oauthRequest.open('POST', 'https://getpocket.com/v3/oauth/request', true);
     oauthRequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
@@ -104,7 +104,7 @@ window.addEventListener("load", function() {
               var shadow = document.createElement('shadow');
               root2.appendChild(shadow);
               currentTab.iframe.addEventListener('mozbrowserlocationchange', function (e) {
-                if (e.detail.url === 'app://kpocket.arma7x.com/success.html') {
+                if (e.detail.url === 'https://getpocket.com/en/about') {
                   var oauthAuthorize = new XMLHttpRequest({ mozSystem: true });
                   var params = {
                     "consumer_key": CONSUMER_KEY,
