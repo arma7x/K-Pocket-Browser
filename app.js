@@ -104,7 +104,7 @@ window.addEventListener("load", function() {
               var shadow = document.createElement('shadow');
               root2.appendChild(shadow);
               currentTab.iframe.addEventListener('mozbrowserlocationchange', function (e) {
-                if (e.detail.url === 'https://getpocket.com/en/about') {
+                if (e.detail.url === 'https://getpocket.com/en/about' || (e.detail.url.indexOf('success.html') > -1)) {
                   var oauthAuthorize = new XMLHttpRequest({ mozSystem: true });
                   var params = {
                     "consumer_key": CONSUMER_KEY,
