@@ -52,7 +52,7 @@ window.addEventListener("load", function() {
   const readabilityPage = function($router, url, save) {
     var hashids = new Hashids(url, 10);
     var id = hashids.encode(1);
-    localforage.getItem('CONTENT___' + id)
+    localforage.getItem('CONTENT___' + (validURL(url) ? id : url))
     .then((article) => {
       if (article != null) {
         setTimeout(() => {
@@ -301,6 +301,15 @@ window.addEventListener("load", function() {
         this.navigateListNav(1);
       },
       arrowLeft: function() {},
+    },
+    softKeyText: { left: 'Delete', center: 'OPEN', right: 'Options' },
+    softKeyListener: {
+      left: function() {},
+      center: function() {
+        console.log(this.data.articles[this.verticalNavIndex].hashid);
+        readabilityPage(this.$router, this.data.articles[this.verticalNavIndex].hashid, false);
+      },
+      right: function() {}
     }
   })
 
@@ -900,7 +909,7 @@ window.addEventListener("load", function() {
             { "text": "Help & Support" },
             { "text": "Login" },
             { "text": "Web Browser" },
-            { "text": "Saved Readability" },
+            { "text": "Saved Articles" },
             { "text": "Bookmarks" },
             { "text": "History" },
             { "text": "Clear History" }
@@ -911,7 +920,7 @@ window.addEventListener("load", function() {
               { "text": "Help & Support" },
               { "text": "Refresh" },
               { "text": "Web Browser" },
-              { "text": "Saved Readability" },
+              { "text": "Saved Articles" },
               { "text": "Bookmarks" },
               { "text": "History" },
               { "text": "Clear History" },
@@ -1012,7 +1021,7 @@ window.addEventListener("load", function() {
                   }
                 }, 100);
               });
-            } else if (selected.text === 'Saved Readability') {
+            } else if (selected.text === 'Saved Articles') {
               setTimeout(() => {
                 this.$router.push('offlineArticles');
               }, 110);
@@ -1044,8 +1053,8 @@ window.addEventListener("load", function() {
         var menu = [
           { "text": "Open with built-in browser" },
           { "text": "Open with KaiOS Browser" },
-          { "text": "Open with Readability" },
-          { "text": "Save Readability" },
+          { "text": "Read As Article" },
+          { "text": "Save Article" },
           { "text": "Delete" }
         ];
         var current = this.data.articles[this.verticalNavIndex];
@@ -1054,7 +1063,7 @@ window.addEventListener("load", function() {
         localforage.getItem('CONTENT___' + id)
         .then((article) => {
           if (article != null) {
-            menu[3] = { "text": "Delete Readability" }
+            menu[3] = { "text": "Delete Article" }
           }
           this.$router.showOptionMenu(title, menu, 'Select', (selected) => {
             if (selected.text === 'Open with built-in browser') {
@@ -1070,11 +1079,11 @@ window.addEventListener("load", function() {
               });
             } else if (selected.text === 'Delete') {
               this.methods.deleteArticle();
-            } else if (selected.text === 'Open with Readability') {
+            } else if (selected.text === 'Read As Article') {
               readabilityPage(this.$router, current.given_url, false);
-            } else if (selected.text === 'Save Readability') {
+            } else if (selected.text === 'Save Article') {
               readabilityPage(this.$router, current.given_url, true);
-            } else if (selected.text === 'Delete Readability') {
+            } else if (selected.text === 'Delete Article') {
               localforage.getItem('ARTICLES')
               .then((articles) => {
                 var filtered = [];

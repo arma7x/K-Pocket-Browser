@@ -24,9 +24,10 @@
   {{^empty}}
     <ul class="kui-list kai-container">
       {{#articles}}
-      <li class="offlineArticlesNav" style="padding-left:5px;padding:right:5px;"  @click='selected()'>
-        <div style="width:100%;height:60px;display:flex;flex-direction:column;">
+      <li class="offlineArticlesNav" style="padding:5px;border-bottom:1px dashed #320374;"  @click='selected()'>
+        <div style="width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;">
           <small style="white-space: pre-wrap!important;word-break: break-word!important;">{{ title }}</small>
+          <small>{{ siteName }}</small>
         </div>
       </li>
       {{/articles}}
