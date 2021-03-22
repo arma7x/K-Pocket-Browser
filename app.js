@@ -33,6 +33,7 @@ window.addEventListener("load", function() {
               var result = new Readability(doc).parse();
               var hashids = new Hashids(url, 10);
               result.hashid = hashids.encode(1);
+              result.url = url;
               resolve(result);
             } else {
               reject('notReaderable');
@@ -49,7 +50,7 @@ window.addEventListener("load", function() {
     });
   }
 
-  const readabilityPage = function($router, url, save) {
+  const readabilityPage = function($router, url, title, save) {
     var hashids = new Hashids(url, 10);
     var id = hashids.encode(1);
     localforage.getItem('CONTENT___' + (validURL(url) ? id : url))
@@ -61,7 +62,7 @@ window.addEventListener("load", function() {
             data: {
               title: 'readabilityPage'
             },
-            template: '<div style="padding:4px;padding-bottom:32px;"><style>img{width:100%;height:auto;}</style>' + article + '</div>'
+            template: '<div style="padding:4px;"><style>img{width:100%;height:auto;}.kui-software-key{height:0px}</style><h4 style="margin-bottom:4px;">' + title + '</h4>' + article + '</div>'
           }));
         }, 150);
       } else {
@@ -95,7 +96,7 @@ window.addEventListener("load", function() {
             data: {
               title: 'readabilityPage'
             },
-            template: '<div style="padding:4px;padding-bottom:32px;"><style>img{width:100%;height:auto;}</style>' + clean + '</div>'
+            template: '<div style="padding:4px;"><style>img{width:100%;height:auto;}.kui-software-key{height:0px}</style><h4 style="margin-bottom:4px;">' + res.title + '</h4>' + clean + '</div>'
           }))
         })
         .catch((e) => {
@@ -147,6 +148,25 @@ window.addEventListener("load", function() {
       request.send(JSON.stringify(params));
     });
   }
+
+  const helpSupportPage = new Kai({
+    name: 'helpSupportPage',
+    data: {
+      title: 'helpSupportPage'
+    },
+    template: '<div style="padding:4px;"><style>.kui-software-key{height:0px}</style><b>NOTICE</b><br>Save button within the https://getpocket.com/explore is not working. Please use `Save to GetPocket` to save website you visited to your GetPocket account<br><br><b>Reader View</b><br>Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br><br> <b>Shortcut Key</b><br>* 1 Zoom-out<br> * 2 Reset zoom<br> * 3 Zoom-in<br> * 5 Hide/Show menu</div>',
+    mounted: function() {
+      this.$router.setHeaderTitle('Help & Support');
+    },
+    unmounted: function() {},
+    methods: {},
+    softKeyText: { left: '', center: '', right: '' },
+    softKeyListener: {
+      left: function() {},
+      center: function() {},
+      right: function() {}
+    }
+  });
 
   const loginPage = function($router) {
     var REQUEST_TOKEN;
@@ -267,19 +287,30 @@ window.addEventListener("load", function() {
       articles: [],
       empty: true
     },
-    mounted: function() {
-      this.$router.setHeaderTitle('Saved Articles');
-      localforage.getItem('ARTICLES')
-      .then((articles) => {
-        if (articles != null) {
-          if (articles.length > 0) {
-            this.setData({
-              articles: articles,
-              empty: false
-            });
+    methods: {
+      getArticles: function() {
+        localforage.getItem('ARTICLES')
+        .then((articles) => {
+          if (articles != null) {
+            if (articles.length > -1) {
+              if (articles.length > 0) {
+                if (this.verticalNavIndex > (articles.length - 1)) {
+                  this.verticalNavIndex = this.verticalNavIndex - 1
+                }
+                this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
+              }
+              this.setData({
+                articles: articles,
+                empty: (articles.length === 0 ? true : false)
+              });
+            }
           }
-        }
-      });
+        });
+      }
+    },
+    mounted: function() {
+      this.$router.setHeaderTitle('Saved Reader View');
+      this.methods.getArticles();
     },
     unmounted: function() {
       this.data.articles = []
@@ -302,14 +333,58 @@ window.addEventListener("load", function() {
       },
       arrowLeft: function() {},
     },
-    softKeyText: { left: 'Delete', center: 'OPEN', right: 'Options' },
     softKeyListener: {
-      left: function() {},
-      center: function() {
-        console.log(this.data.articles[this.verticalNavIndex].hashid);
-        readabilityPage(this.$router, this.data.articles[this.verticalNavIndex].hashid, false);
+      left: function() {
+        var current = this.data.articles[this.verticalNavIndex];
+        this.$router.showDialog('Confirm', 'Are you sure to remove ' + current.title + ' ?', null, 'Yes', () => {
+          localforage.getItem('ARTICLES')
+          .then((articles) => {
+            var filtered = [];
+            if (articles != null) {
+              filtered = articles.filter(function(a) {
+                return a.hashid != current.hashid;
+              });
+              localforage.setItem('ARTICLES', filtered)
+              .then(() => {
+                localforage.removeItem('CONTENT___' + current.hashid)
+                this.$router.showToast('Success');
+                this.methods.getArticles();
+              });
+            }
+          })
+        }, 'No', () => {}, '', () => {}, () => {});
       },
-      right: function() {}
+      center: function() {
+        var current = this.data.articles[this.verticalNavIndex];
+        readabilityPage(this.$router, current.hashid, current.title, false);
+      },
+      right: function() {
+        var current = this.data.articles[this.verticalNavIndex];
+        var menus = [
+          { "text": "Open with built-in browser" },
+          { "text": "Open with KaiOS Browser" }
+        ];
+        this.$router.showOptionMenu('Options', menus, 'Select', (selected) => {
+          if (selected.text === 'Open with built-in browser') {
+            this.$state.setState('target_url', current.url);
+            this.$router.push('browser');
+          } else if (selected.text === 'Open with KaiOS Browser') {
+            var activity = new MozActivity({
+              name: "view",
+              data: {
+                type: "url",
+                url: current.url
+              }
+            });
+          }
+        }, () => {
+          if (this.data.articles.length > 0) {
+            setTimeout(() => {
+              this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
+            }, 100);
+          }
+        }, 0)
+      }
     }
   })
 
@@ -409,7 +484,6 @@ window.addEventListener("load", function() {
       document.addEventListener('keydown', this.methods.keyListener);
     },
     unmounted: function() {
-      this.$state.setState('target_url', '');
       this.$router.hideLoading();
       const sk = document.getElementById('__kai_soft_key__');
       sk.classList.remove("sr-only");
@@ -511,6 +585,18 @@ window.addEventListener("load", function() {
             })
           })
           .then((menu) => {
+            var hashids = new Hashids(window['currentTab'].url.url, 10);
+            var id = hashids.encode(1);
+            return localforage.getItem('CONTENT___' + id)
+            .then((article) => {
+              menu.savedArticle = false;
+              if (article != null) {
+                menu.savedArticle = true;
+              }
+              return Promise.resolve(menu);
+            })
+          })
+          .then((menu) => {
               var menus = [
                 { "text": "Refresh" }
               ];
@@ -534,6 +620,12 @@ window.addEventListener("load", function() {
               menus.push({ "text": "Bookmarks" });
               menus.push({ "text": "History" });
               menus.push({ "text": "Clear History" });
+              menus.push({ "text": "Open with Reader View" });
+              if (menu.savedArticle) {
+                menus.push({ "text": "Delete Reader View" });
+              } else {
+                menus.push({ "text": "Save Reader View" });
+              }
               menus.push({ "text": "Quit" });
               sk.classList.remove("sr-only");
               navigator.spatialNavigationEnabled = false;
@@ -598,6 +690,7 @@ window.addEventListener("load", function() {
                     this.$router.showToast('Removed');
                   });
                 } else if (selected.text === 'Quit') {
+                  this.$state.setState('target_url', '');
                   this.$router.pop();
                 } else if (selected.text === 'Bookmarks') {
                   localforage.getItem('POCKET_BOOKMARKS')
@@ -666,6 +759,28 @@ window.addEventListener("load", function() {
                       }
                     }
                   });
+                } else if (selected.text === 'Open with Reader View') {
+                  var title = typeof window['currentTab'].title === 'string' ? window['currentTab'].title : '';
+                  readabilityPage(this.$router, window['currentTab'].url.url, title, false);
+                } else if (selected.text === 'Save Reader View') {
+                  readabilityPage(this.$router, window['currentTab'].url.url, '', true);
+                } else if (selected.text === 'Delete Reader View') {
+                  var hashids = new Hashids(window['currentTab'].url.url, 10);
+                  var id = hashids.encode(1);
+                  localforage.getItem('ARTICLES')
+                  .then((articles) => {
+                    var filtered = [];
+                    if (articles != null) {
+                      filtered = articles.filter(function(a) {
+                        return a.hashid != id;
+                      });
+                      localforage.setItem('ARTICLES', filtered)
+                      .then(() => {
+                        localforage.removeItem('CONTENT___' + id)
+                        this.$router.showToast('Success');
+                      });
+                    }
+                  })
                 }
               }, () => {
                 setTimeout(() => {
@@ -755,6 +870,7 @@ window.addEventListener("load", function() {
         if (canGoBack) {
           window['currentTab'].goBack();
         } else {
+          this.$state.setState('target_url', '');
           this.$router.pop();
         }
       });
@@ -909,7 +1025,7 @@ window.addEventListener("load", function() {
             { "text": "Help & Support" },
             { "text": "Login" },
             { "text": "Web Browser" },
-            { "text": "Saved Articles" },
+            { "text": "Saved Reader View" },
             { "text": "Bookmarks" },
             { "text": "History" },
             { "text": "Clear History" }
@@ -920,7 +1036,7 @@ window.addEventListener("load", function() {
               { "text": "Help & Support" },
               { "text": "Refresh" },
               { "text": "Web Browser" },
-              { "text": "Saved Articles" },
+              { "text": "Saved Reader View" },
               { "text": "Bookmarks" },
               { "text": "History" },
               { "text": "Clear History" },
@@ -1012,23 +1128,15 @@ window.addEventListener("load", function() {
                 }, 100);
               });
             } else if (selected.text ===  'Help & Support') {
-              this.$router.showDialog('Help & Support', '<b>NOTICE</b><br>* Save button within the https://getpocket.com/explore is not working. Please use `Save to GetPocket` to save website you visit to your GetPocket account<br><br> <b>Shortcut Key</b><br>* 1 Zoom-out<br> * 2 Reset zoom<br> * 3 Zoom-in<br> * 5 Hide/Show menu', null, 'OK', () => {}, ' ', () => {}, ' ', () => {}, () => {
-                setTimeout(() => {
-                  if (this.data.articles[this.verticalNavIndex].isArticle) {
-                    this.$router.setSoftKeyRightText('More');
-                  } else {
-                    this.$router.setSoftKeyRightText('');
-                  }
-                }, 100);
-              });
-            } else if (selected.text === 'Saved Articles') {
+              this.$router.push('helpSupportPage');
+            } else if (selected.text === 'Saved Reader View') {
               setTimeout(() => {
                 this.$router.push('offlineArticles');
               }, 110);
             }
           }, () => {
             setTimeout(() => {
-              if (!this.$router.bottomSheet) {
+              if (!this.$router.bottomSheet && this.$router.stack[this.$router.stack.length - 1].name === 'homepage') {
                 if (this.data.articles[this.verticalNavIndex].isArticle) {
                   this.$router.setSoftKeyRightText('More');
                 } else {
@@ -1053,8 +1161,8 @@ window.addEventListener("load", function() {
         var menu = [
           { "text": "Open with built-in browser" },
           { "text": "Open with KaiOS Browser" },
-          { "text": "Read As Article" },
-          { "text": "Save Article" },
+          { "text": "Open with Reader View" },
+          { "text": "Save Reader View" },
           { "text": "Delete" }
         ];
         var current = this.data.articles[this.verticalNavIndex];
@@ -1063,7 +1171,7 @@ window.addEventListener("load", function() {
         localforage.getItem('CONTENT___' + id)
         .then((article) => {
           if (article != null) {
-            menu[3] = { "text": "Delete Article" }
+            menu[3] = { "text": "Delete Reader View" }
           }
           this.$router.showOptionMenu(title, menu, 'Select', (selected) => {
             if (selected.text === 'Open with built-in browser') {
@@ -1079,11 +1187,11 @@ window.addEventListener("load", function() {
               });
             } else if (selected.text === 'Delete') {
               this.methods.deleteArticle();
-            } else if (selected.text === 'Read As Article') {
-              readabilityPage(this.$router, current.given_url, false);
-            } else if (selected.text === 'Save Article') {
-              readabilityPage(this.$router, current.given_url, true);
-            } else if (selected.text === 'Delete Article') {
+            } else if (selected.text === 'Open with Reader View') {
+              readabilityPage(this.$router, current.given_url, current.title, false);
+            } else if (selected.text === 'Save Reader View') {
+              readabilityPage(this.$router, current.given_url, '', true);
+            } else if (selected.text === 'Delete Reader View') {
               localforage.getItem('ARTICLES')
               .then((articles) => {
                 var filtered = [];
@@ -1159,6 +1267,10 @@ window.addEventListener("load", function() {
         name: 'offlineArticles',
         component: offlineArticles
         
+      },
+      'helpSupportPage': {
+        name: 'helpSupportPage',
+        component: helpSupportPage
       }
     }
   });

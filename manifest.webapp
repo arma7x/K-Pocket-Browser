@@ -1,7 +1,7 @@
 {
   "version": "1.2.0",
   "name": "K-Pocket Browser",
-  "description": "Web Browser & Unoffical GetPocket client for KaiOS",
+  "description": "Web Browser & Unoffical GetPocket client for KaiOS. K-Pocket Browser also provide Reader View mode, you can save Reader View for offline usage and read it later",
   "launch_path": "/index.html",
   "theme": "#873eff",
   "theme_color": "#873eff",

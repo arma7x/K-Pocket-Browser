@@ -26,8 +26,8 @@
       {{#articles}}
       <li class="offlineArticlesNav" style="padding:5px;border-bottom:1px dashed #320374;"  @click='selected()'>
         <div style="width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;">
-          <small style="white-space: pre-wrap!important;word-break: break-word!important;">{{ title }}</small>
-          <small>{{ siteName }}</small>
+          <small style="font-weight:bold;white-space:pre-wrap!important;word-break:break-word!important;">{{ title }}</small>
+          <small style="float:right;text-align:right;">{{ siteName }}</small>
         </div>
       </li>
       {{/articles}}
