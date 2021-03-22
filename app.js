@@ -298,6 +298,8 @@ window.addEventListener("load", function() {
                   this.verticalNavIndex = this.verticalNavIndex - 1
                 }
                 this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
+              } else {
+                this.$router.setSoftKeyText('', '', '')
               }
               this.setData({
                 articles: articles,
@@ -335,62 +337,72 @@ window.addEventListener("load", function() {
     },
     softKeyListener: {
       left: function() {
-        var current = this.data.articles[this.verticalNavIndex];
-        this.$router.showDialog('Confirm', 'Are you sure to remove ' + current.title + ' ?', null, 'Yes', () => {
-          localforage.getItem('ARTICLES')
-          .then((articles) => {
-            var filtered = [];
-            if (articles != null) {
-              filtered = articles.filter(function(a) {
-                return a.hashid != current.hashid;
-              });
-              localforage.setItem('ARTICLES', filtered)
-              .then(() => {
-                localforage.removeItem('CONTENT___' + current.hashid)
-                this.$router.showToast('Success');
-                this.methods.getArticles();
-              });
-            }
-          })
-        }, 'No', () => {}, '', () => {}, () => {
-          if (this.data.articles.length > 0) {
+        if (this.data.articles.length > 0) {
+          var current = this.data.articles[this.verticalNavIndex];
+          this.$router.showDialog('Confirm', 'Are you sure to remove ' + current.title + ' ?', null, 'Yes', () => {
+            localforage.getItem('ARTICLES')
+            .then((articles) => {
+              var filtered = [];
+              if (articles != null) {
+                filtered = articles.filter(function(a) {
+                  return a.hashid != current.hashid;
+                });
+                localforage.setItem('ARTICLES', filtered)
+                .then(() => {
+                  localforage.removeItem('CONTENT___' + current.hashid)
+                  this.$router.showToast('Success');
+                  this.methods.getArticles();
+                });
+              }
+            })
+          }, 'No', () => {}, '', () => {}, () => {
             setTimeout(() => {
-              this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
+              if (this.data.articles.length > 0) {
+                this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
+              } else {
+                this.$router.setSoftKeyText('', '', '')
+              }
             }, 100);
-          }
-        });
+          });
+        }
       },
       center: function() {
-        var current = this.data.articles[this.verticalNavIndex];
-        readabilityPage(this.$router, current.hashid, current.title, false);
+        if (this.data.articles.length > 0) {
+          var current = this.data.articles[this.verticalNavIndex];
+          readabilityPage(this.$router, current.hashid, current.title, false);
+        }
       },
       right: function() {
-        var current = this.data.articles[this.verticalNavIndex];
-        var menus = [
-          { "text": "Open with built-in browser" },
-          { "text": "Open with KaiOS Browser" }
-        ];
-        this.$router.showOptionMenu('Options', menus, 'Select', (selected) => {
-          if (selected.text === 'Open with built-in browser') {
-            this.$state.setState('target_url', current.url);
-            this.$router.push('browser');
-          } else if (selected.text === 'Open with KaiOS Browser') {
-            var activity = new MozActivity({
-              name: "view",
-              data: {
-                type: "url",
-                url: current.url
-              }
-            });
-          }
-        }, () => {
-          if (this.data.articles.length > 0) {
+        if (this.data.articles.length > 0) {
+          var current = this.data.articles[this.verticalNavIndex];
+          var menus = [
+            { "text": "Open with built-in browser" },
+            { "text": "Open with KaiOS Browser" }
+          ];
+          this.$router.showOptionMenu('Options', menus, 'Select', (selected) => {
+            if (selected.text === 'Open with built-in browser') {
+              this.$state.setState('target_url', current.url);
+              this.$router.push('browser');
+            } else if (selected.text === 'Open with KaiOS Browser') {
+              var activity = new MozActivity({
+                name: "view",
+                data: {
+                  type: "url",
+                  url: current.url
+                }
+              });
+            }
+          }, () => {
             setTimeout(() => {
-              this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
+              if (this.data.articles.length > 0) {
+                this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
+              } else {
+                this.$router.setSoftKeyText('', '', '')
+              }
             }, 100);
-          }
-        }, 0)
-      }
+          }, 0)
+        }
+      } 
     }
   })
 
