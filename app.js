@@ -352,7 +352,13 @@ window.addEventListener("load", function() {
               });
             }
           })
-        }, 'No', () => {}, '', () => {}, () => {});
+        }, 'No', () => {}, '', () => {}, () => {
+          if (this.data.articles.length > 0) {
+            setTimeout(() => {
+              this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
+            }, 100);
+          }
+        });
       },
       center: function() {
         var current = this.data.articles[this.verticalNavIndex];
