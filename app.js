@@ -62,7 +62,7 @@ window.addEventListener("load", function() {
             data: {
               title: 'readabilityPage'
             },
-            template: '<div style="padding:4px;"><style>img{width:100%;height:auto;}.kui-software-key{height:0px}</style><h4 style="margin-bottom:4px;">' + title + '</h4>' + article + '</div>'
+            template: '<div style="padding:4px;"><style>img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4>' + article + '</div>'
           }));
         }, 150);
       } else {
@@ -615,20 +615,26 @@ window.addEventListener("load", function() {
             })
           })
           .then((menu) => {
-              var menus = [
-                { "text": "Refresh" }
-              ];
+              var menus = [];
+              if (this.data.loading) {
+                menus.push({ "text": "Stop" });
+              } else {
+                menus.push({ "text": "Refresh" });
+              }
               if (menu.isLoggedIn) {
                 menus.push({ "text": "Save to GetPocket" });
+              }
+              menus.push({ "text": "Open with Reader View" });
+              if (menu.savedArticle) {
+                menus.push({ "text": "Delete Reader View" });
+              } else {
+                menus.push({ "text": "Save Reader View" });
               }
               if (menu.canBack) {
                 menus.push({ "text": "Go Back" });
               }
               if (menu.canForward) {
                 menus.push({ "text": "Go Forward" });
-              }
-              if (this.data.loading) {
-                menus.push({ "text": "Stop" });
               }
               if (menu.bookmark) {
                 menus.push({ "text": "Remove Bookmark" });
@@ -638,12 +644,6 @@ window.addEventListener("load", function() {
               menus.push({ "text": "Bookmarks" });
               menus.push({ "text": "History" });
               menus.push({ "text": "Clear History" });
-              menus.push({ "text": "Open with Reader View" });
-              if (menu.savedArticle) {
-                menus.push({ "text": "Delete Reader View" });
-              } else {
-                menus.push({ "text": "Save Reader View" });
-              }
               menus.push({ "text": "Quit" });
               sk.classList.remove("sr-only");
               navigator.spatialNavigationEnabled = false;
@@ -778,8 +778,26 @@ window.addEventListener("load", function() {
                     }
                   });
                 } else if (selected.text === 'Open with Reader View') {
-                  var title = typeof window['currentTab'].title === 'string' ? window['currentTab'].title : '';
-                  readabilityPage(this.$router, window['currentTab'].url.url, title, false);
+                  if (window['currentTab'].title === 'string') {
+                    readabilityPage(this.$router, window['currentTab'].url.url, title, false);
+                  } else {
+                    var hashids = new Hashids(window['currentTab'].url.url, 10);
+                    var id = hashids.encode(1);
+                    localforage.getItem('ARTICLES')
+                    .then((articles) => {
+                      var filtered = [];
+                      if (articles != null) {
+                        filtered = articles.filter(function(a) {
+                          return a.hashid == id;
+                        });
+                        if (filtered.length > 0) {
+                          readabilityPage(this.$router, window['currentTab'].url.url, filtered[0].title, false);
+                        } else {
+                          readabilityPage(this.$router, window['currentTab'].url.url, 'UNKNOWN', false);
+                        }
+                      }
+                    })
+                  }
                 } else if (selected.text === 'Save Reader View') {
                   readabilityPage(this.$router, window['currentTab'].url.url, '', true);
                 } else if (selected.text === 'Delete Reader View') {
@@ -1206,7 +1224,8 @@ window.addEventListener("load", function() {
             } else if (selected.text === 'Delete') {
               this.methods.deleteArticle();
             } else if (selected.text === 'Open with Reader View') {
-              readabilityPage(this.$router, current.given_url, current.title, false);
+              console.log(current);
+              readabilityPage(this.$router, current.given_url, current.resolved_title, false);
             } else if (selected.text === 'Save Reader View') {
               readabilityPage(this.$router, current.given_url, '', true);
             } else if (selected.text === 'Delete Reader View') {
