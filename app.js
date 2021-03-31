@@ -51,6 +51,7 @@ window.addEventListener("load", function() {
   }
 
   const readabilityPage = function($router, url, title, save) {
+    navigator.spatialNavigationEnabled = false;
     var hashids = new Hashids(url, 10);
     var id = hashids.encode(1);
     localforage.getItem('CONTENT___' + (validURL(url) ? id : url))
@@ -61,6 +62,9 @@ window.addEventListener("load", function() {
             name: 'readabilityPage',
             data: {
               title: 'readabilityPage'
+            },
+            mounted: function() {
+              navigator.spatialNavigationEnabled = false;
             },
             template: '<div style="padding:4px;"><style>img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4>' + article + '</div>'
           }));
@@ -95,6 +99,9 @@ window.addEventListener("load", function() {
             name: 'readabilityPage',
             data: {
               title: 'readabilityPage'
+            },
+            mounted: function() {
+              navigator.spatialNavigationEnabled = false;
             },
             template: '<div style="padding:4px;"><style>img{width:100%;height:auto;}.kui-software-key{height:0px}</style><h4 style="margin-bottom:4px;">' + res.title + '</h4>' + clean + '</div>'
           }))
@@ -312,6 +319,7 @@ window.addEventListener("load", function() {
     },
     mounted: function() {
       this.$router.setHeaderTitle('Saved Reader View');
+      navigator.spatialNavigationEnabled = false;
       this.methods.getArticles();
     },
     unmounted: function() {
@@ -432,6 +440,7 @@ window.addEventListener("load", function() {
       currentTab = new Tab(TARGET_URL);
       currentTab.iframe.setAttribute('style', 'position:fixed;margin-top:28px;top:0;height:91%;width:100%;');
       currentTab.iframe.setAttribute('frameBorder', '0');
+      //currentTab.iframe.setAttribute('sandbox', 'allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-top-navigation allow-top-navigation-by-user-activation'); //TODO
       currentTab.iframe.addEventListener('mozbrowserlocationchange', (e) => {
         this.$state.setState('target_url', e.detail.url);
         this.$router.setHeaderTitle(e.detail.url);
