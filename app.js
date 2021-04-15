@@ -856,6 +856,9 @@ window.addEventListener("load", function() {
         const urlDialog = Kai.createDialog('URL', '<div><input id="url-input" type="text" style="width:97%;"/></div>', null, 'Go', undefined, 'Cancel', undefined, undefined, this.$router);
         urlDialog.mounted = () => {
           setTimeout(() => {
+            setTimeout(() => {
+              this.$router.setSoftKeyText('Cancel' , '', 'Go');
+            }, 103);
             const URL = document.getElementById('url-input');
             if (!URL) {
               return;
@@ -1346,6 +1349,20 @@ window.addEventListener("load", function() {
     }
   }, 500);
 
+  function displayKaiAds() {
+    getKaiAd({
+      publisher: 'ac3140f7-08d6-46d9-aa6f-d861720fba66',
+      app: 'k-pocket-browser',
+      slot: 'kaios',
+      onerror: err => console.error(err),
+      onready: ad => {
+        ad.call('display')
+      }
+    })
+  }
+
+  displayKaiAds();
+
   document.addEventListener('visibilitychange', () => {
     if (app.$router.stack.length === 1) {
       setTimeout(() => {
@@ -1362,6 +1379,7 @@ window.addEventListener("load", function() {
         clearInterval(IFRAME_TIMER);
       }
     } else if (document.visibilityState === 'visible') {
+      displayKaiAds();
       const browser = app.$router.stack[app.$router.stack.length - 1];
       if (browser.name === 'browser') {
         if (document.activeElement.tagName !== 'IFRAME') {
@@ -1381,16 +1399,6 @@ window.addEventListener("load", function() {
       }, 500);
     }
   });
-
-  getKaiAd({
-    publisher: 'ac3140f7-08d6-46d9-aa6f-d861720fba66',
-    app: 'k-pocket-browser',
-    slot: 'kaios',
-    onerror: err => console.error(err),
-    onready: ad => {
-      ad.call('display')
-    }
-  })
 
 });
 
