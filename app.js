@@ -66,7 +66,7 @@ window.addEventListener("load", function() {
             mounted: function() {
               navigator.spatialNavigationEnabled = false;
             },
-            template: '<div style="padding:4px;"><style>img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4>' + article + '</div>'
+            template: '<div style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4>' + article + '</div>'
           }));
         }, 150);
       } else {
