@@ -1076,7 +1076,8 @@ window.addEventListener("load", function() {
             { "text": "Saved Reader View" },
             { "text": "Bookmarks" },
             { "text": "History" },
-            { "text": "Clear History" }
+            { "text": "Clear History" },
+            { "text": "Kill App" }
           ];
           if (res) {
             title = res.username;
@@ -1088,7 +1089,8 @@ window.addEventListener("load", function() {
               { "text": "Bookmarks" },
               { "text": "History" },
               { "text": "Clear History" },
-              { "text": "Logout" }
+              { "text": "Logout" },
+              { "text": "Kill App" }
             ];
           }
           this.$router.showOptionMenu(title, menu, 'Select', (selected) => {
@@ -1181,6 +1183,8 @@ window.addEventListener("load", function() {
               setTimeout(() => {
                 this.$router.push('offlineArticles');
               }, 110);
+            } else if (selected.text === 'Kill App') {
+              window.close();
             }
           }, () => {
             setTimeout(() => {
