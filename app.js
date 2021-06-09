@@ -83,13 +83,19 @@ window.addEventListener("load", function() {
               title: 'readabilityPage'
             },
             mounted: function() {
-              navigator.spatialNavigationEnabled = false;
+              setTimeout(() => {
+                navigator.spatialNavigationEnabled = false;
+              }, 100);
               document.addEventListener('keydown', takeScreenshot);
             },
             unmounted: function() {
               document.removeEventListener('keydown', takeScreenshot);
             },
-            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4>' + article + '</div>'
+            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4>' + article + '</div>',
+            dPadNavListener: {
+              arrowRight: function() {},
+              arrowLeft: function() {},
+            }
           }));
         }, 150);
       } else {
@@ -124,13 +130,19 @@ window.addEventListener("load", function() {
               title: 'readabilityPage'
             },
             mounted: function() {
-              navigator.spatialNavigationEnabled = false;
+              setTimeout(() => {
+                navigator.spatialNavigationEnabled = false;
+              }, 100);
               document.addEventListener('keydown', takeScreenshot);
             },
             unmounted: function() {
               document.removeEventListener('keydown', takeScreenshot);
             },
-            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:4px;">' + res.title + '</h4>' + clean + '</div>'
+            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:4px;">' + res.title + '</h4>' + clean + '</div>',
+            dPadNavListener: {
+              arrowRight: function() {},
+              arrowLeft: function() {},
+            }
           }))
         })
         .catch((e) => {
@@ -206,6 +218,9 @@ window.addEventListener("load", function() {
     </div>`,
     mounted: function() {
       this.$router.setHeaderTitle('Help & Support');
+      setTimeout(() => {
+        navigator.spatialNavigationEnabled = false;
+      }, 100);
     },
     unmounted: function() {},
     methods: {},
@@ -361,7 +376,9 @@ window.addEventListener("load", function() {
     },
     mounted: function() {
       this.$router.setHeaderTitle('Saved Reader View');
-      navigator.spatialNavigationEnabled = false;
+      setTimeout(() => {
+        navigator.spatialNavigationEnabled = false;
+      }, 100);
       this.methods.getArticles();
     },
     unmounted: function() {
@@ -993,7 +1010,9 @@ window.addEventListener("load", function() {
     templateUrl: document.location.origin + '/templates/homepage.html',
     mounted: function() {
       this.$router.setHeaderTitle('K-Pocket Browser');
-      navigator.spatialNavigationEnabled = false;
+      setTimeout(() => {
+        navigator.spatialNavigationEnabled = false;
+      }, 100);
       localforage.getItem('POCKET_ACCESS_TOKEN')
       .then((POCKET_ACCESS_TOKEN) => {
         if (POCKET_ACCESS_TOKEN != null) {
