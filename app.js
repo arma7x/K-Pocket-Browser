@@ -1,3 +1,5 @@
+const APP_VERSION = '1.3.0';
+
 window.addEventListener("load", function() {
 
   localforage.setDriver(localforage.LOCALSTORAGE);
@@ -9,7 +11,24 @@ window.addEventListener("load", function() {
   const state = new KaiState({
     'target_url': '',
     'editor': '',
+    'disableJS': false,
   });
+
+  function takeScreenshot(evt) {
+    if (evt.key == '*') {
+      html2canvas(document.querySelector("#__kai_router__")).then(canvas => {
+        canvas.toBlob((blob) => {
+          saveAs(blob, `${new Date().getTime().toString()}.png`); 
+        });
+      });
+    } else if (evt.key == '#') {
+      html2canvas(document.querySelector("#__readabilityPage__")).then(canvas => {
+        canvas.toBlob((blob) => {
+          saveAs(blob, `${new Date().getTime().toString()}.png`); 
+        });
+      });
+    }
+  }
 
   function validURL(str) {
     var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
@@ -65,8 +84,12 @@ window.addEventListener("load", function() {
             },
             mounted: function() {
               navigator.spatialNavigationEnabled = false;
+              document.addEventListener('keydown', takeScreenshot);
             },
-            template: '<div style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4>' + article + '</div>'
+            unmounted: function() {
+              document.removeEventListener('keydown', takeScreenshot);
+            },
+            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4>' + article + '</div>'
           }));
         }, 150);
       } else {
@@ -102,8 +125,12 @@ window.addEventListener("load", function() {
             },
             mounted: function() {
               navigator.spatialNavigationEnabled = false;
+              document.addEventListener('keydown', takeScreenshot);
             },
-            template: '<div style="padding:4px;"><style>img{width:100%;height:auto;}.kui-software-key{height:0px}</style><h4 style="margin-bottom:4px;">' + res.title + '</h4>' + clean + '</div>'
+            unmounted: function() {
+              document.removeEventListener('keydown', takeScreenshot);
+            },
+            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:4px;">' + res.title + '</h4>' + clean + '</div>'
           }))
         })
         .catch((e) => {
@@ -161,7 +188,22 @@ window.addEventListener("load", function() {
     data: {
       title: 'helpSupportPage'
     },
-    template: '<div style="padding:4px;"><style>.kui-software-key{height:0px}</style><b>NOTICE</b><br>Save button within the https://getpocket.com/explore is not working. Please use `Save to GetPocket` to save website you visited to your GetPocket account<br><br><b>Reader View</b><br>Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br><br> <b>Shortcut Key</b><br>* 1 Zoom-out<br> * 2 Reset zoom<br> * 3 Zoom-in<br> * 5 Hide/Show menu</div>',
+    template: `<div style="padding:4px;font-size:14px;">
+      <style>.kui-software-key{height:0px}#__kai_router__{height:266px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}</style>
+      <b>NOTICE</b><br>
+        Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br><br>
+        <b>Menu > Disable Javascript</b> to speed up web page rendering (may not work on some websites)<br><br>
+      <b>Reader View</b><br>
+        Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br><br>
+      <b>Reader View Shortcut Key</b><br>
+        <b>*</b> Screenshot viewport<br>
+        <b>#</b> Screenshot entire page<br><br>
+      <b>Browser Shortcut Key</b><br>
+        <b>1</b> Zoom-out<br>
+        <b>2</b> Reset zoom<br>
+        <b>3</b> Zoom-in<br>
+        <b>5</b> Hide/Show menu
+    </div>`,
     mounted: function() {
       this.$router.setHeaderTitle('Help & Support');
     },
@@ -440,7 +482,9 @@ window.addEventListener("load", function() {
       currentTab = new Tab(TARGET_URL);
       currentTab.iframe.setAttribute('style', 'position:fixed;margin-top:28px;top:0;height:91%;width:100%;');
       currentTab.iframe.setAttribute('frameBorder', '0');
-      //currentTab.iframe.setAttribute('sandbox', 'allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-top-navigation allow-top-navigation-by-user-activation'); //TODO
+      if (this.$state.getState('disableJS')) {
+        currentTab.iframe.setAttribute('sandbox', 'allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-top-navigation allow-top-navigation-by-user-activation');
+      }
       currentTab.iframe.addEventListener('mozbrowserlocationchange', (e) => {
         this.$state.setState('target_url', e.detail.url);
         this.$router.setHeaderTitle(e.detail.url);
@@ -853,7 +897,7 @@ window.addEventListener("load", function() {
         const sk = document.getElementById('__kai_soft_key__');
         navigator.spatialNavigationEnabled = false;
         sk.classList.remove("sr-only");
-        const urlDialog = Kai.createDialog('URL', '<div><input id="url-input" type="text" style="width:97%;"/></div>', null, 'Go', undefined, 'Cancel', undefined, undefined, this.$router);
+        const urlDialog = Kai.createDialog('URL', '<div><input id="url-input" type="text" class="kui-input"/></div>', null, '', undefined, '', undefined, '', undefined, undefined, this.$router);
         urlDialog.mounted = () => {
           setTimeout(() => {
             setTimeout(() => {
@@ -905,6 +949,16 @@ window.addEventListener("load", function() {
             });
           });
         }
+        urlDialog.dPadNavListener = {
+          arrowUp: function() {
+            const URL = document.getElementById('url-input');
+            URL.focus();
+          },
+          arrowDown: function() {
+            const URL = document.getElementById('url-input');
+            URL.focus();
+          }
+        }
         this.$router.showBottomSheet(urlDialog);
       },
       center: function() {},
@@ -948,10 +1002,19 @@ window.addEventListener("load", function() {
             this.methods.loadArticles(0);
           } else {
             if (this.data.articles.length > 0) {
-              this.$router.setSoftKeyRightText('More');
+              if (!this.$router.bottomSheet)
+                this.$router.setSoftKeyRightText('More');
             }
           }
         }
+      });
+
+      localforage.getItem('APP_VERSION')
+      .then((v) => {
+        if (v == null || v != APP_VERSION) {
+          this.$router.showDialog('Notice', `Goto <b>Menu > Help & Support</b> to read about new features`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
+        }
+        localforage.setItem('APP_VERSION', APP_VERSION)
       });
     },
     unmounted: function() {},
@@ -998,7 +1061,8 @@ window.addEventListener("load", function() {
                   _this.setData({ articles: [...merged, ...[{ isArticle: null }]] });
                 }
                 if (_this.data.articles.length > 0) {
-                  _this.$router.setSoftKeyRightText('More');
+                  if (!this.$router.bottomSheet)
+                    _this.$router.setSoftKeyRightText('More');
                   _this.setData({ empty: false });
                 } else {
                   _this.$router.setSoftKeyRightText('');
@@ -1068,6 +1132,7 @@ window.addEventListener("load", function() {
       left: function() {
         localforage.getItem('POCKET_ACCESS_TOKEN')
         .then((res) => {
+          const JS = this.$state.getState('disableJS') ? 'Enable Javascript' : 'Disable Javascript';
           var title = 'Menu';
           var menu = [
             { "text": "Help & Support" },
@@ -1077,6 +1142,7 @@ window.addEventListener("load", function() {
             { "text": "Bookmarks" },
             { "text": "History" },
             { "text": "Clear History" },
+            { "text": JS },
             { "text": "Kill App" }
           ];
           if (res) {
@@ -1089,6 +1155,7 @@ window.addEventListener("load", function() {
               { "text": "Bookmarks" },
               { "text": "History" },
               { "text": "Clear History" },
+              { "text": JS },
               { "text": "Logout" },
               { "text": "Kill App" }
             ];
@@ -1185,6 +1252,8 @@ window.addEventListener("load", function() {
               }, 110);
             } else if (selected.text === 'Kill App') {
               window.close();
+            } else if (selected.text === 'Enable Javascript' || selected.text === 'Disable Javascript') {
+              this.$state.setState('disableJS', !this.$state.getState('disableJS'));
             }
           }, () => {
             setTimeout(() => {
@@ -1240,7 +1309,6 @@ window.addEventListener("load", function() {
             } else if (selected.text === 'Delete') {
               this.methods.deleteArticle();
             } else if (selected.text === 'Open with Reader View') {
-              console.log(current);
               readabilityPage(this.$router, current.given_url, current.resolved_title, false);
             } else if (selected.text === 'Save Reader View') {
               readabilityPage(this.$router, current.given_url, '', true);
