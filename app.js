@@ -1,4 +1,4 @@
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 
 window.addEventListener("load", function() {
 
@@ -28,6 +28,35 @@ window.addEventListener("load", function() {
         });
       });
     }
+  }
+
+  function downloadURL($router, url) {
+    $router.showLoading();
+    const down = new XMLHttpRequest({ mozSystem: true });
+    down.open('GET', url, true);
+    down.responseType = 'blob';
+    down.onload = (evt) => {
+      var mime = '';
+      try {
+        const n = evt.currentTarget.response.type.split('/');
+        mime = n[n.length - 1];
+      } catch(e) {
+        mime = '';
+      }
+      saveAs(evt.currentTarget.response, `${new Date().getTime().toString()}.${mime}`);
+      $router.hideLoading();
+    }
+    down.onprogress = (evt) => {
+      if (evt.lengthComputable) {
+        var percentComplete = evt.loaded / evt.total * 100;
+        $router.showToast(`${percentComplete.toFixed(2)}%`);
+      }
+    }
+    down.onerror = (err) => {
+      $router.hideLoading();
+      $router.showToast("Error DOWNLOAD");
+    }
+    down.send();
   }
 
   function validURL(str) {
@@ -205,6 +234,10 @@ window.addEventListener("load", function() {
       <b>NOTICE</b><br>
         Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br><br>
         <b>Menu > Disable Javascript</b> to speed up web page rendering (may not work on some websites)<br><br>
+      <b>Download Content(new)</b><br>
+        <b>></b> Download url content, such as https://example.com/photo.jpg in Web Browser. Click Menu > Download Content<br>
+        <b>></b> Support image, audio, video, etc<br>
+        <b>></b> Only support direct url, not streaming url<br><br>
       <b>Reader View</b><br>
         Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br><br>
       <b>Reader View Shortcut Key</b><br>
@@ -686,6 +719,7 @@ window.addEventListener("load", function() {
           })
           .then((menu) => {
               var menus = [];
+              menus.push({ "text": "Download Content" });
               if (this.data.loading) {
                 menus.push({ "text": "Stop" });
               } else {
@@ -717,7 +751,7 @@ window.addEventListener("load", function() {
               menus.push({ "text": "Quit" });
               sk.classList.remove("sr-only");
               navigator.spatialNavigationEnabled = false;
-              this.$router.showOptionMenu('Options', menus, 'Select', (selected) => {
+              this.$router.showOptionMenu('Menu', menus, 'Select', (selected) => {
                 if (selected.text === 'Refresh') {
                   window['currentTab'].iframe.reload();
                 } else if (selected.text === 'Go Back') {
@@ -887,6 +921,8 @@ window.addEventListener("load", function() {
                       });
                     }
                   })
+                } else if (selected.text === 'Download Content') {
+                  downloadURL(this.$router, this.$state.getState('target_url'));
                 }
               }, () => {
                 setTimeout(() => {
@@ -1055,8 +1091,10 @@ window.addEventListener("load", function() {
                 for (var i in arr) {
                   if (arr[i][1].top_image_url) {
                     arr[i][1]['preview'] = arr[i][1].top_image_url;
-                  } else {
+                  } else if (arr[i][1].domain_metadata) {
                     arr[i][1]['preview'] = arr[i][1].domain_metadata.logo;
+                  } else {
+                    arr[i][1]['preview'] = '/icons/icon112x112.png';
                   }
                   arr[i][1]['isArticle'] = true;
                   newArticles.push(arr[i][1]);
