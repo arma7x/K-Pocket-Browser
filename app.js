@@ -1,4 +1,4 @@
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.0';
 
 window.addEventListener("load", function() {
 
@@ -98,13 +98,15 @@ window.addEventListener("load", function() {
     });
   }
 
-  const readabilityPage = function($router, url, title, save) {
+  const readabilityPage = function($router, url, title, save, textOnly = false) {
     navigator.spatialNavigationEnabled = false;
     var hashids = new Hashids(url, 10);
     var id = hashids.encode(1);
     localforage.getItem('CONTENT___' + (validURL(url) ? id : url))
     .then((article) => {
       if (article != null) {
+        if (textOnly)
+          article = article.replace(/<img .*?>/g,"")
         setTimeout(() => {
           $router.push(new Kai({
             name: 'readabilityPage',
@@ -120,10 +122,30 @@ window.addEventListener("load", function() {
             unmounted: function() {
               document.removeEventListener('keydown', takeScreenshot);
             },
-            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4>' + article + '</div>',
+            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4><span id="articleBody" style="font-size: 100%;">' + article + '</span></div>',
             dPadNavListener: {
               arrowRight: function() {},
               arrowLeft: function() {},
+            },
+            softKeyListener: {
+              left: function() {
+                var current = parseInt(document.getElementById('articleBody').style.fontSize);
+                current -= 10;
+                if (current < 60)
+                  return
+                else
+                  document.getElementById('articleBody').style.fontSize = `${current}%`
+                $router.showToast(`${current}%`);
+              },
+              right: function() {
+                var current = parseInt(document.getElementById('articleBody').style.fontSize);
+                current += 10;
+                if (current > 180)
+                  return
+                else
+                  document.getElementById('articleBody').style.fontSize = `${current}%`
+                $router.showToast(`${current}%`);
+              }
             }
           }));
         }, 150);
@@ -132,6 +154,8 @@ window.addEventListener("load", function() {
         getReaderable(url)
         .then((res) => {
           $router.hideLoading();
+          if (textOnly)
+            res.content = res.content.replace(/<img .*?>/g,"")
           const clean = DOMPurify.sanitize(res.content);
           if (save) {
             localforage.getItem('ARTICLES')
@@ -167,10 +191,30 @@ window.addEventListener("load", function() {
             unmounted: function() {
               document.removeEventListener('keydown', takeScreenshot);
             },
-            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:4px;">' + res.title + '</h4>' + clean + '</div>',
+            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:4px;">' + res.title + '</h4><span id="articleBody" style="font-size: 100%;">' + clean + '</span></div>',
             dPadNavListener: {
               arrowRight: function() {},
               arrowLeft: function() {},
+            },
+            softKeyListener: {
+              left: function() {
+                var current = parseInt(document.getElementById('articleBody').style.fontSize);
+                current -= 10;
+                if (current < 60)
+                  return
+                else
+                  document.getElementById('articleBody').style.fontSize = `${current}%`
+                $router.showToast(`${current}%`);
+              },
+              right: function() {
+                var current = parseInt(document.getElementById('articleBody').style.fontSize);
+                current += 10;
+                if (current > 180)
+                  return
+                else
+                  document.getElementById('articleBody').style.fontSize = `${current}%`
+                $router.showToast(`${current}%`);
+              }
             }
           }))
         })
@@ -234,15 +278,18 @@ window.addEventListener("load", function() {
       <b>NOTICE</b><br>
         Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br><br>
         <b>Menu > Disable Javascript</b> to speed up web page rendering (may not work on some websites)<br><br>
-      <b>Download Content(new)</b><br>
+      <b>Download Content</b><br>
         <b>></b> Download url content, such as https://example.com/photo.jpg in Web Browser. Click Menu > Download Content<br>
         <b>></b> Support image, audio, video, etc<br>
         <b>></b> Only support direct url, not streaming url<br><br>
       <b>Reader View</b><br>
-        Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br><br>
+        - Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br>
+        - <b>Open with Reader View(TEXT)</b> only render text<b>(new)</b><br><br>
       <b>Reader View Shortcut Key</b><br>
         <b>*</b> Screenshot viewport<br>
-        <b>#</b> Screenshot entire page<br><br>
+        <b>#</b> Screenshot entire page<br>
+        <b>Left Key</b> Zoom-out<b>(new)</b><br>
+        <b>Right Key</b> Zoom-in<b>(new)</b><br><br>
       <b>Browser Shortcut Key</b><br>
         <b>1</b> Zoom-out<br>
         <b>2</b> Reset zoom<br>
@@ -477,7 +524,8 @@ window.addEventListener("load", function() {
           var current = this.data.articles[this.verticalNavIndex];
           var menus = [
             { "text": "Open with built-in browser" },
-            { "text": "Open with KaiOS Browser" }
+            { "text": "Open with KaiOS Browser" },
+            { "text": "Open with Reader View(TEXT)" }
           ];
           this.$router.showOptionMenu('Options', menus, 'Select', (selected) => {
             if (selected.text === 'Open with built-in browser') {
@@ -491,6 +539,8 @@ window.addEventListener("load", function() {
                   url: current.url
                 }
               });
+            } else if (selected.text === 'Open with Reader View(TEXT)'){
+              readabilityPage(this.$router, current.hashid, current.title, false, true);
             }
           }, () => {
             setTimeout(() => {
@@ -729,6 +779,7 @@ window.addEventListener("load", function() {
                 menus.push({ "text": "Save to GetPocket" });
               }
               menus.push({ "text": "Open with Reader View" });
+              menus.push({ "text": "Open with Reader View(TEXT)" });
               if (menu.savedArticle) {
                 menus.push({ "text": "Delete Reader View" });
               } else {
@@ -881,9 +932,9 @@ window.addEventListener("load", function() {
                       }
                     }
                   });
-                } else if (selected.text === 'Open with Reader View') {
+                } else if (selected.text === 'Open with Reader View' || selected.text === 'Open with Reader View(TEXT)') {
                   if (window['currentTab'].title === 'string') {
-                    readabilityPage(this.$router, window['currentTab'].url.url, title, false);
+                    readabilityPage(this.$router, window['currentTab'].url.url, title, false, selected.text === 'Open with Reader View(TEXT)');
                   } else {
                     var hashids = new Hashids(window['currentTab'].url.url, 10);
                     var id = hashids.encode(1);
@@ -895,9 +946,9 @@ window.addEventListener("load", function() {
                           return a.hashid == id;
                         });
                         if (filtered.length > 0) {
-                          readabilityPage(this.$router, window['currentTab'].url.url, filtered[0].title, false);
+                          readabilityPage(this.$router, window['currentTab'].url.url, filtered[0].title, false, selected.text === 'Open with Reader View(TEXT)');
                         } else {
-                          readabilityPage(this.$router, window['currentTab'].url.url, 'UNKNOWN', false);
+                          readabilityPage(this.$router, window['currentTab'].url.url, 'UNKNOWN', false, selected.text === 'Open with Reader View(TEXT)');
                         }
                       }
                     })
@@ -1067,7 +1118,7 @@ window.addEventListener("load", function() {
       localforage.getItem('APP_VERSION')
       .then((v) => {
         if (v == null || v != APP_VERSION) {
-          this.$router.showDialog('Notice', `Goto <b>Menu > Help & Support</b> to read about new features`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
+          this.$router.showDialog('Notice', `<b>Reader View Mode</b> got new update & zoom capability, Goto <b>Menu > Help & Support</b> to read about new features`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
         }
         localforage.setItem('APP_VERSION', APP_VERSION)
       });
@@ -1340,6 +1391,7 @@ window.addEventListener("load", function() {
           { "text": "Open with built-in browser" },
           { "text": "Open with KaiOS Browser" },
           { "text": "Open with Reader View" },
+          { "text": "Open with Reader View(TEXT)" },
           { "text": "Save Reader View" },
           { "text": "Delete" }
         ];
@@ -1365,8 +1417,8 @@ window.addEventListener("load", function() {
               });
             } else if (selected.text === 'Delete') {
               this.methods.deleteArticle();
-            } else if (selected.text === 'Open with Reader View') {
-              readabilityPage(this.$router, current.given_url, current.resolved_title, false);
+            } else if (selected.text === 'Open with Reader View' || selected.text === 'Open with Reader View(TEXT)') {
+              readabilityPage(this.$router, current.given_url, current.resolved_title, false, selected.text === 'Open with Reader View(TEXT)');
             } else if (selected.text === 'Save Reader View') {
               readabilityPage(this.$router, current.given_url, '', true);
             } else if (selected.text === 'Delete Reader View') {
