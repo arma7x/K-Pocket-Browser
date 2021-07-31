@@ -1,4 +1,4 @@
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
 
 window.addEventListener("load", function() {
 
@@ -279,17 +279,17 @@ window.addEventListener("load", function() {
         Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br><br>
         <b>Menu > Disable Javascript</b> to speed up web page rendering (may not work on some websites)<br><br>
       <b>Download Content</b><br>
-        <b>></b> Download url content, such as https://example.com/photo.jpg in Web Browser. Click Menu > Download Content<br>
+        <b>></b> Download url content, such as https://example.com/photo.jpg in Web Browser. Click <b>Menu > Download Content</b><br>
         <b>></b> Support image, audio, video, etc<br>
         <b>></b> Only support direct url, not streaming url<br><br>
       <b>Reader View</b><br>
         - Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br>
-        - <b>Open with Reader View(TEXT)</b> only render text<b>(new)</b><br><br>
+        - <b>Open with Reader View(TEXT)</b> only render text<b></b><br><br>
       <b>Reader View Shortcut Key</b><br>
         <b>*</b> Screenshot viewport<br>
         <b>#</b> Screenshot entire page<br>
-        <b>Left Key</b> Zoom-out<b>(new)</b><br>
-        <b>Right Key</b> Zoom-in<b>(new)</b><br><br>
+        <b>Left Key</b> Zoom-out<b></b><br>
+        <b>Right Key</b> Zoom-in<b></b><br><br>
       <b>Browser Shortcut Key</b><br>
         <b>1</b> Zoom-out<br>
         <b>2</b> Reset zoom<br>
@@ -580,7 +580,7 @@ window.addEventListener("load", function() {
       }
       this.$state.setState('target_url', TARGET_URL);
       currentTab = new Tab(TARGET_URL);
-      currentTab.iframe.setAttribute('style', 'position:fixed;margin-top:28px;top:0;height:91%;width:100%;');
+      currentTab.iframe.setAttribute('style', 'position:fixed;margin-top:0px;top:0;height:101%;width:100%;');
       currentTab.iframe.setAttribute('frameBorder', '0');
       if (this.$state.getState('disableJS')) {
         currentTab.iframe.setAttribute('sandbox', 'allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-top-navigation allow-top-navigation-by-user-activation');
@@ -682,7 +682,7 @@ window.addEventListener("load", function() {
               evt.stopPropagation();
               break
             case '1':
-              if (this.data.zoom > 0.25) {
+              if (this.data.zoom > 0.25 && !this.$router.bottomSheet) {
                 this.data.zoom -= 0.25;
                 window['currentTab'].iframe.zoom(this.data.zoom);
               }
@@ -692,7 +692,7 @@ window.addEventListener("load", function() {
               window['currentTab'].iframe.zoom(this.data.zoom);
               break
             case '3':
-              if (this.data.zoom < 3) {
+              if (this.data.zoom < 3 && !this.$router.bottomSheet) {
                 this.data.zoom += 0.25;
                 window['currentTab'].iframe.zoom(this.data.zoom);
               }
@@ -1001,7 +1001,7 @@ window.addEventListener("load", function() {
         const sk = document.getElementById('__kai_soft_key__');
         navigator.spatialNavigationEnabled = false;
         sk.classList.remove("sr-only");
-        const urlDialog = Kai.createDialog('URL', '<div><input id="url-input" type="text" class="kui-input"/></div>', null, '', undefined, '', undefined, '', undefined, undefined, this.$router);
+        const urlDialog = Kai.createDialog('URL/Search', '<div><input id="url-input" type="text" class="kui-input"/></div>', null, '', undefined, '', undefined, '', undefined, undefined, this.$router);
         urlDialog.mounted = () => {
           setTimeout(() => {
             setTimeout(() => {
@@ -1027,7 +1027,6 @@ window.addEventListener("load", function() {
                   }
                   break
                 case 'SoftRight':
-                  this.$router.hideBottomSheet();
                   sk.classList.add("sr-only");
                   
                   var TARGET_URL = URL.value;
@@ -1039,14 +1038,15 @@ window.addEventListener("load", function() {
                   setTimeout(() => {
                     URL.blur();
                     navigator.spatialNavigationEnabled = true;
+                    this.$router.hideBottomSheet();
                   }, 100);
                   break
                 case 'SoftLeft':
-                  this.$router.hideBottomSheet();
                   sk.classList.add("sr-only");
                   setTimeout(() => {
                     URL.blur();
                     navigator.spatialNavigationEnabled = true;
+                    this.$router.hideBottomSheet();
                   }, 100);
                   break
               }
@@ -1118,7 +1118,7 @@ window.addEventListener("load", function() {
       localforage.getItem('APP_VERSION')
       .then((v) => {
         if (v == null || v != APP_VERSION) {
-          this.$router.showDialog('Notice', `<b>Reader View Mode</b> got new update & zoom capability, Goto <b>Menu > Help & Support</b> to read about new features`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
+          this.$router.showDialog('Update Notice', `Fullscreen browsing, Blue Light filter & custom Brightness, Goto <b>Menu > Help & Support</b> to read about new features`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
         }
         localforage.setItem('APP_VERSION', APP_VERSION)
       });
@@ -1187,6 +1187,14 @@ window.addEventListener("load", function() {
           }
         });
       },
+      renderSoftkeyRight: function() {
+        if (this.data.articles.length > 0) {
+          if (!this.$router.bottomSheet)
+            this.$router.setSoftKeyRightText('More');
+        } else {
+          this.$router.setSoftKeyRightText('');
+        }
+      },
       deleteArticle: function() {
         var current = this.data.articles[this.verticalNavIndex];
         const params = [{
@@ -1238,9 +1246,16 @@ window.addEventListener("load", function() {
     softKeyText: { left: 'Menu', center: '', right: '' },
     softKeyListener: {
       left: function() {
+        console.log(this.$router.bottomSheet);
+        if (this.$router.bottomSheet)
+          return
         localforage.getItem('POCKET_ACCESS_TOKEN')
         .then((res) => {
+          const root = document.getElementsByTagName( 'html' )[0];
           const JS = this.$state.getState('disableJS') ? 'Enable Javascript' : 'Disable Javascript';
+          const blueFilter = root.classList.contains('blue-filter');
+          const brightness = window.getComputedStyle(root).getPropertyValue("filter").match(/\d+/g)[0];
+          console.log(brightness);
           var title = 'Menu';
           var menu = [
             { "text": "Help & Support" },
@@ -1250,6 +1265,8 @@ window.addEventListener("load", function() {
             { "text": "Bookmarks" },
             { "text": "History" },
             { "text": "Clear History" },
+            { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Blue Light Filter' },
+            { "text": "Brightness" },
             { "text": JS },
             { "text": "Kill App" }
           ];
@@ -1263,6 +1280,8 @@ window.addEventListener("load", function() {
               { "text": "Bookmarks" },
               { "text": "History" },
               { "text": "Clear History" },
+              { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Blue Light Filter' },
+              { "text": "Brightness" },
               { "text": JS },
               { "text": "Logout" },
               { "text": "Kill App" }
@@ -1362,6 +1381,68 @@ window.addEventListener("load", function() {
               window.close();
             } else if (selected.text === 'Enable Javascript' || selected.text === 'Disable Javascript') {
               this.$state.setState('disableJS', !this.$state.getState('disableJS'));
+            } else if (selected.text === 'Turn Off Blue Light Filter' ||selected.text === 'Turn On Blue Light Filter') {
+              if (blueFilter)
+                root.classList.remove('blue-filter')
+              else
+                root.classList.add('blue-filter')
+            } else if (selected.text === 'Brightness') {
+              const brightnessDialog = Kai.createDialog('Brightness', '<div><input id="brightness-input" placeholder="Min 50 & Max 100" value="' + brightness + '" class="kui-input" type="tel" /></div>', null, '', undefined, '', undefined, '', undefined, undefined, this.$router);
+              brightnessDialog.mounted = () => {
+                setTimeout(() => {
+                  setTimeout(() => {
+                    this.$router.setSoftKeyText('Cancel' , '', 'Save');
+                  }, 103);
+                  const B_INPUT = document.getElementById('brightness-input');
+                  if (!B_INPUT) {
+                    return;
+                  }
+                  B_INPUT.focus();
+                  B_INPUT.addEventListener('keydown', (evt) => {
+                    switch (evt.key) {
+                      case 'Backspace':
+                      case 'EndCall':
+                        if (document.activeElement.value.length === 0) {
+                          this.$router.hideBottomSheet();
+                          this.methods.renderSoftkeyRight();
+                          setTimeout(() => {
+                            B_INPUT.blur();
+                          }, 100);
+                        }
+                        break
+                      case 'SoftRight':
+                        this.$router.hideBottomSheet();
+                        this.methods.renderSoftkeyRight();
+                        setTimeout(() => {
+                          B_INPUT.blur();
+                          console.log(B_INPUT.value);
+                          const v = parseInt(B_INPUT.value);
+                          if (v >= 50 && v <= 100)
+                            document.getElementsByTagName( 'html' )[0].style.filter = `brightness(${B_INPUT.value}%)`
+                        }, 100);
+                        break
+                      case 'SoftLeft':
+                        this.$router.hideBottomSheet();
+                        this.methods.renderSoftkeyRight();
+                        setTimeout(() => {
+                          B_INPUT.blur();
+                        }, 100);
+                        break
+                    }
+                  });
+                });
+              }
+              brightnessDialog.dPadNavListener = {
+                arrowUp: function() {
+                  const B_INPUT = document.getElementById('brightness-input');
+                  B_INPUT.focus();
+                },
+                arrowDown: function() {
+                  const B_INPUT = document.getElementById('brightness-input');
+                  B_INPUT.focus();
+                }
+              }
+              this.$router.showBottomSheet(brightnessDialog);
             }
           }, () => {
             setTimeout(() => {
