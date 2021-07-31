@@ -276,15 +276,20 @@ window.addEventListener("load", function() {
     template: `<div style="padding:4px;font-size:14px;">
       <style>.kui-software-key{height:0px}#__kai_router__{height:266px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}</style>
       <b>NOTICE</b><br>
-        Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br><br>
-        <b>Menu > Disable Javascript</b> to speed up web page rendering (may not work on some websites)<br><br>
+        ~ Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br><br>
+        <b>Press Call Button x 3(consecutively) to kill app</b><br><br>
+        <b>Menu > Disable Javascript</b><br>
+        ~ to speed up web page rendering (may not work on some websites)<br><br>
+        <b>Menu > Turn On/Off Blue Light Filter</b><br>
+        ~ to toggle blue light filter(reduce eye strain)<br><br>
       <b>Download Content</b><br>
-        <b>></b> Download url content, such as https://example.com/photo.jpg in Web Browser. Click <b>Menu > Download Content</b><br>
-        <b>></b> Support image, audio, video, etc<br>
-        <b>></b> Only support direct url, not streaming url<br><br>
+        <b>~</b> Download web content, such as <b>https://example.com/photo.jpg</b> in Web Browser.<br>
+        <b>~</b> Support image, audio, video, etc<br>
+        <b>~</b> Only support direct url, not streaming url<br>
+        <b>~</b> Click <b>Web Browser > Menu > Download Content</b><br><br>
       <b>Reader View</b><br>
-        - Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br>
-        - <b>Open with Reader View(TEXT)</b> only render text<b></b><br><br>
+        ~ Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br>
+        ~ <b>Open with Reader View(TEXT)</b> mode only extract text<b></b><br><br>
       <b>Reader View Shortcut Key</b><br>
         <b>*</b> Screenshot viewport<br>
         <b>#</b> Screenshot entire page<br>
@@ -1118,7 +1123,7 @@ window.addEventListener("load", function() {
       localforage.getItem('APP_VERSION')
       .then((v) => {
         if (v == null || v != APP_VERSION) {
-          this.$router.showDialog('Update Notice', `Fullscreen browsing, Blue Light filter & custom Brightness, Goto <b>Menu > Help & Support</b> to read about new features`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
+          this.$router.showDialog('New Updates', `- Hide URL bar for fullscreen browsing<br>- Add Blue Light filter<br>- Press Call x 3 to kill app<br>- Goto <b>Menu > Help & Support</b> to read about new features`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
         }
         localforage.setItem('APP_VERSION', APP_VERSION)
       });
@@ -1254,8 +1259,6 @@ window.addEventListener("load", function() {
           const root = document.getElementsByTagName( 'html' )[0];
           const JS = this.$state.getState('disableJS') ? 'Enable Javascript' : 'Disable Javascript';
           const blueFilter = root.classList.contains('blue-filter');
-          const brightness = window.getComputedStyle(root).getPropertyValue("filter").match(/\d+/g)[0];
-          console.log(brightness);
           var title = 'Menu';
           var menu = [
             { "text": "Help & Support" },
@@ -1266,7 +1269,6 @@ window.addEventListener("load", function() {
             { "text": "History" },
             { "text": "Clear History" },
             { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Blue Light Filter' },
-            { "text": "Brightness" },
             { "text": JS },
             { "text": "Kill App" }
           ];
@@ -1281,7 +1283,6 @@ window.addEventListener("load", function() {
               { "text": "History" },
               { "text": "Clear History" },
               { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Blue Light Filter' },
-              { "text": "Brightness" },
               { "text": JS },
               { "text": "Logout" },
               { "text": "Kill App" }
@@ -1386,63 +1387,6 @@ window.addEventListener("load", function() {
                 root.classList.remove('blue-filter')
               else
                 root.classList.add('blue-filter')
-            } else if (selected.text === 'Brightness') {
-              const brightnessDialog = Kai.createDialog('Brightness', '<div><input id="brightness-input" placeholder="Min 50 & Max 100" value="' + brightness + '" class="kui-input" type="tel" /></div>', null, '', undefined, '', undefined, '', undefined, undefined, this.$router);
-              brightnessDialog.mounted = () => {
-                setTimeout(() => {
-                  setTimeout(() => {
-                    this.$router.setSoftKeyText('Cancel' , '', 'Save');
-                  }, 103);
-                  const B_INPUT = document.getElementById('brightness-input');
-                  if (!B_INPUT) {
-                    return;
-                  }
-                  B_INPUT.focus();
-                  B_INPUT.addEventListener('keydown', (evt) => {
-                    switch (evt.key) {
-                      case 'Backspace':
-                      case 'EndCall':
-                        if (document.activeElement.value.length === 0) {
-                          this.$router.hideBottomSheet();
-                          this.methods.renderSoftkeyRight();
-                          setTimeout(() => {
-                            B_INPUT.blur();
-                          }, 100);
-                        }
-                        break
-                      case 'SoftRight':
-                        this.$router.hideBottomSheet();
-                        this.methods.renderSoftkeyRight();
-                        setTimeout(() => {
-                          B_INPUT.blur();
-                          console.log(B_INPUT.value);
-                          const v = parseInt(B_INPUT.value);
-                          if (v >= 50 && v <= 100)
-                            document.getElementsByTagName( 'html' )[0].style.filter = `brightness(${B_INPUT.value}%)`
-                        }, 100);
-                        break
-                      case 'SoftLeft':
-                        this.$router.hideBottomSheet();
-                        this.methods.renderSoftkeyRight();
-                        setTimeout(() => {
-                          B_INPUT.blur();
-                        }, 100);
-                        break
-                    }
-                  });
-                });
-              }
-              brightnessDialog.dPadNavListener = {
-                arrowUp: function() {
-                  const B_INPUT = document.getElementById('brightness-input');
-                  B_INPUT.focus();
-                },
-                arrowDown: function() {
-                  const B_INPUT = document.getElementById('brightness-input');
-                  B_INPUT.focus();
-                }
-              }
-              this.$router.showBottomSheet(brightnessDialog);
             }
           }, () => {
             setTimeout(() => {
@@ -1641,6 +1585,21 @@ window.addEventListener("load", function() {
   }
 
   displayKaiAds();
+
+  var EXIT_STACK = 0;
+  document.addEventListener('keydown', (evt) => {
+    if (evt.key === 'Call') {
+      if (window['exittimer'])
+        clearTimeout(window['exittimer']);
+      EXIT_STACK += 1;
+      if (EXIT_STACK === 3)
+        window.close();
+      window['exittimer'] = setTimeout(() => {
+        EXIT_STACK = 0;
+        window['exittimer'] = null;
+      }, 300);
+    }
+  });
 
   document.addEventListener('visibilitychange', () => {
     if (app.$router.stack.length === 1) {
