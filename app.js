@@ -280,8 +280,8 @@ window.addEventListener("load", function() {
         <b>Press Call Button x 3(consecutively) to kill app</b><br><br>
         <b>Menu > Disable Javascript</b><br>
         ~ to speed up web page rendering (may not work on some websites)<br><br>
-        <b>Menu > Turn On/Off Blue Light Filter</b><br>
-        ~ to toggle blue light filter(reduce eye strain)<br><br>
+        <b>Menu > Turn On/Off Bluelight Filter</b><br>
+        ~ to toggle Bluelight filter(reduce eye strain)<br><br>
       <b>Download Content</b><br>
         <b>~</b> Download web content, such as <b>https://example.com/photo.jpg</b> in Web Browser.<br>
         <b>~</b> Support image, audio, video, etc<br>
@@ -1123,7 +1123,7 @@ window.addEventListener("load", function() {
       localforage.getItem('APP_VERSION')
       .then((v) => {
         if (v == null || v != APP_VERSION) {
-          this.$router.showDialog('New Updates', `- Hide URL bar for fullscreen browsing<br>- Add Blue Light filter<br>- Press Call x 3 to kill app<br>- Goto <b>Menu > Help & Support</b> to read about new features`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
+          this.$router.showDialog('New Updates', `- Hide URL bar for fullscreen browsing<br>- Add Bluelight filter<br>- Press Call Button x 3 to kill app<br>- Goto <b>Menu > Help & Support</b> to read about new features`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
         }
         localforage.setItem('APP_VERSION', APP_VERSION)
       });
@@ -1268,7 +1268,7 @@ window.addEventListener("load", function() {
             { "text": "Bookmarks" },
             { "text": "History" },
             { "text": "Clear History" },
-            { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Blue Light Filter' },
+            { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' },
             { "text": JS },
             { "text": "Kill App" }
           ];
@@ -1282,7 +1282,7 @@ window.addEventListener("load", function() {
               { "text": "Bookmarks" },
               { "text": "History" },
               { "text": "Clear History" },
-              { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Blue Light Filter' },
+              { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' },
               { "text": JS },
               { "text": "Logout" },
               { "text": "Kill App" }
@@ -1382,7 +1382,7 @@ window.addEventListener("load", function() {
               window.close();
             } else if (selected.text === 'Enable Javascript' || selected.text === 'Disable Javascript') {
               this.$state.setState('disableJS', !this.$state.getState('disableJS'));
-            } else if (selected.text === 'Turn Off Blue Light Filter' ||selected.text === 'Turn On Blue Light Filter') {
+            } else if (selected.text === 'Turn Off Bluelight Filter' || selected.text === 'Turn On Bluelight Filter') {
               if (blueFilter)
                 root.classList.remove('blue-filter')
               else
