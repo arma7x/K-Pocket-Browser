@@ -1,4 +1,4 @@
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
 
 window.addEventListener("load", function() {
 
