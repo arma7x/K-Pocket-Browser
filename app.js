@@ -7,6 +7,7 @@ window.addEventListener("load", function() {
   const CONSUMER_KEY = "94872-b408e0508baaa3a6658564f3";
   const COUNT = 24;
   var IFRAME_TIMER;
+  var VOLUME_CONTROL_TIMER;
 
   const state = new KaiState({
     'target_url': '',
@@ -537,13 +538,7 @@ window.addEventListener("load", function() {
               this.$state.setState('target_url', current.url);
               this.$router.push('browser');
             } else if (selected.text === 'Open with KaiOS Browser') {
-              var activity = new MozActivity({
-                name: "view",
-                data: {
-                  type: "url",
-                  url: current.url
-                }
-              });
+              window.open(current.url);
             } else if (selected.text === 'Open with Reader View(TEXT)'){
               readabilityPage(this.$router, current.hashid, current.title, false, true);
             }
@@ -647,7 +642,8 @@ window.addEventListener("load", function() {
         //console.log('mozbrowsersecuritychange', event.detail.state);
       });
       currentTab.iframe.addEventListener('mozbrowsererror', (event) => {
-        //console.log('mozbrowsererror', event);
+        if (event.detail.type === 'other')
+          this.$router.showToast('Menu > Open with KaiOS Browser');
       });
       window['currentTab'] = currentTab;
 
@@ -783,6 +779,7 @@ window.addEventListener("load", function() {
               if (menu.isLoggedIn) {
                 menus.push({ "text": "Save to GetPocket" });
               }
+              menus.push({ "text": "Open with KaiOS Browser" });
               menus.push({ "text": "Open with Reader View" });
               menus.push({ "text": "Open with Reader View(TEXT)" });
               if (menu.savedArticle) {
@@ -804,7 +801,7 @@ window.addEventListener("load", function() {
               menus.push({ "text": "Bookmarks" });
               menus.push({ "text": "History" });
               menus.push({ "text": "Clear History" });
-              menus.push({ "text": "Control Volume" });
+              menus.push({ "text": "Volume Control" });
               menus.push({ "text": "Quit" });
               sk.classList.remove("sr-only");
               navigator.spatialNavigationEnabled = false;
@@ -935,6 +932,8 @@ window.addEventListener("load", function() {
                       }
                     }
                   });
+                } else if (selected.text ===  'Open with KaiOS Browser') {
+                  window.open(window['currentTab'].url.url);
                 } else if (selected.text === 'Open with Reader View' || selected.text === 'Open with Reader View(TEXT)') {
                   if (window['currentTab'].title === 'string') {
                     readabilityPage(this.$router, window['currentTab'].url.url, title, false, selected.text === 'Open with Reader View(TEXT)');
@@ -977,8 +976,15 @@ window.addEventListener("load", function() {
                   })
                 } else if (selected.text === 'Download Content') {
                   downloadURL(this.$router, this.$state.getState('target_url'));
-                } else if (selected.text === 'Control Volume') {
-                  navigator.volumeManager.requestShow();
+                } else if (selected.text === 'Volume Control') {
+                  setTimeout(() => {
+                    navigator.volumeManager.requestShow();
+                    navigator.spatialNavigationEnabled = false;
+                    VOLUME_CONTROL_TIMER = setTimeout(() => {
+                      navigator.spatialNavigationEnabled = true;
+                      VOLUME_CONTROL_TIMER = null;
+                    }, 2000);
+                  }, 100);
                 } else if (selected.text === 'Quit') {
                   this.$state.setState('target_url', '');
                   this.$router.pop();
@@ -1126,7 +1132,7 @@ window.addEventListener("load", function() {
       localforage.getItem('APP_VERSION')
       .then((v) => {
         if (v == null || v != APP_VERSION) {
-          this.$router.showDialog('New Updates', `- Hide URL bar for fullscreen browsing<br>- Add Bluelight filter<br>- Press Call Button x 3 to kill app<br>- Goto <b>Menu > Help & Support</b> to read about new features`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
+          this.$router.showDialog('New Updates', `- add Volume Control to Web Browser menu<br>- open blocked iframe website with KaiOS Browser<br>- replace MozActivity with window.open() to launch URL in KaiOS Browser`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
         }
         localforage.setItem('APP_VERSION', APP_VERSION)
       });
@@ -1436,13 +1442,7 @@ window.addEventListener("load", function() {
                 this.$state.setState('target_url', current.given_url);
                 this.$router.push('browser');
               } else if (selected.text === 'Open with KaiOS Browser') {
-                var activity = new MozActivity({
-                  name: "view",
-                  data: {
-                    type: "url",
-                    url: current.given_url
-                  }
-                });
+                window.open(current.given_url);
               } else if (selected.text === 'Delete') {
                 this.methods.deleteArticle();
               } else if (selected.text === 'Open with Reader View' || selected.text === 'Open with Reader View(TEXT)') {
