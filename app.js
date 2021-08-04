@@ -804,6 +804,7 @@ window.addEventListener("load", function() {
               menus.push({ "text": "Bookmarks" });
               menus.push({ "text": "History" });
               menus.push({ "text": "Clear History" });
+              menus.push({ "text": "Control Volume" });
               menus.push({ "text": "Quit" });
               sk.classList.remove("sr-only");
               navigator.spatialNavigationEnabled = false;
@@ -867,9 +868,6 @@ window.addEventListener("load", function() {
                     localforage.setItem('POCKET_BOOKMARKS', filtered);
                     this.$router.showToast('Removed');
                   });
-                } else if (selected.text === 'Quit') {
-                  this.$state.setState('target_url', '');
-                  this.$router.pop();
                 } else if (selected.text === 'Bookmarks') {
                   localforage.getItem('POCKET_BOOKMARKS')
                   .then((bookmarks) => {
@@ -979,6 +977,11 @@ window.addEventListener("load", function() {
                   })
                 } else if (selected.text === 'Download Content') {
                   downloadURL(this.$router, this.$state.getState('target_url'));
+                } else if (selected.text === 'Control Volume') {
+                  navigator.volumeManager.requestShow();
+                } else if (selected.text === 'Quit') {
+                  this.$state.setState('target_url', '');
+                  this.$router.pop();
                 }
               }, () => {
                 setTimeout(() => {
@@ -1251,9 +1254,6 @@ window.addEventListener("load", function() {
     softKeyText: { left: 'Menu', center: '', right: '' },
     softKeyListener: {
       left: function() {
-        console.log(this.$router.bottomSheet);
-        if (this.$router.bottomSheet)
-          return
         localforage.getItem('POCKET_ACCESS_TOKEN')
         .then((res) => {
           const root = document.getElementsByTagName( 'html' )[0];
@@ -1289,105 +1289,107 @@ window.addEventListener("load", function() {
             ];
           }
           this.$router.showOptionMenu(title, menu, 'Select', (selected) => {
-            if (selected.text === 'Login') {
-              loginPage(this.$router);
-            } else if (selected.text === 'Web Browser') {
-              this.$router.push('browser');
-            } else if (selected.text === 'Logout') {
-              localforage.removeItem('POCKET_ACCESS_TOKEN');
-              this.verticalNavIndex = 0;
-              this.$router.setSoftKeyRightText('');
-              this.setData({ POCKET_ACCESS_TOKEN: null });
-              this.setData({ articles: [], offset: -1 });
-            } else if (selected.text === 'Refresh') {
-              this.verticalNavIndex = 0;
-              this.setData({ articles: [] });
-              this.methods.loadArticles(0);
-            } else if (selected.text === 'Bookmarks') {
-              localforage.getItem('POCKET_BOOKMARKS')
-              .then((bookmarks) => {
-                if (bookmarks) {
-                  if (bookmarks.length > 0) {
-                    var b = [];
-                    bookmarks.forEach((i) => {
-                      b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
-                    });
-                    this.$router.showOptionMenu('Bookmarks', b, 'OPEN', (selected) => {
-                      this.$state.setState('target_url', selected.subtext);
-                      setTimeout(() => {
-                        this.$router.push('browser');
-                      }, 100);
-                    }, () => {
-                      setTimeout(() => {
-                        if (!this.$router.bottomSheet) {
-                          if (this.data.articles[this.verticalNavIndex].isArticle) {
-                            this.$router.setSoftKeyRightText('More');
-                          } else {
-                            this.$router.setSoftKeyRightText('');
+            setTimeout(() => {
+              if (selected.text === 'Login') {
+                loginPage(this.$router);
+              } else if (selected.text === 'Web Browser') {
+                this.$router.push('browser');
+              } else if (selected.text === 'Logout') {
+                localforage.removeItem('POCKET_ACCESS_TOKEN');
+                this.verticalNavIndex = 0;
+                this.$router.setSoftKeyRightText('');
+                this.setData({ POCKET_ACCESS_TOKEN: null });
+                this.setData({ articles: [], offset: -1 });
+              } else if (selected.text === 'Refresh') {
+                this.verticalNavIndex = 0;
+                this.setData({ articles: [] });
+                this.methods.loadArticles(0);
+              } else if (selected.text === 'Bookmarks') {
+                localforage.getItem('POCKET_BOOKMARKS')
+                .then((bookmarks) => {
+                  if (bookmarks) {
+                    if (bookmarks.length > 0) {
+                      var b = [];
+                      bookmarks.forEach((i) => {
+                        b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
+                      });
+                      this.$router.showOptionMenu('Bookmarks', b, 'OPEN', (selected) => {
+                        this.$state.setState('target_url', selected.subtext);
+                        setTimeout(() => {
+                          this.$router.push('browser');
+                        }, 100);
+                      }, () => {
+                        setTimeout(() => {
+                          if (!this.$router.bottomSheet) {
+                            if (this.data.articles[this.verticalNavIndex].isArticle) {
+                              this.$router.setSoftKeyRightText('More');
+                            } else {
+                              this.$router.setSoftKeyRightText('');
+                            }
                           }
-                        }
-                      }, 100);
-                    }, 0);
+                        }, 100);
+                      }, 0);
+                    }
                   }
-                }
-              });
-            } else if (selected.text === 'History') {
-              localforage.getItem('POCKET_HISTORY')
-              .then((history) => {
-                if (history) {
-                  if (history.length > 0) {
-                    var b = [];
-                    history.forEach((i) => {
-                      b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
-                    });
-                    this.$router.showOptionMenu('History', b, 'OPEN', (selected) => {
-                      this.$state.setState('target_url', selected.subtext);
-                      setTimeout(() => {
-                        this.$router.push('browser');
-                      }, 100);
-                    }, () => {
-                      setTimeout(() => {
-                        if (!this.$router.bottomSheet) {
-                          if (this.data.articles[this.verticalNavIndex].isArticle) {
-                            this.$router.setSoftKeyRightText('More');
-                          } else {
-                            this.$router.setSoftKeyRightText('');
+                });
+              } else if (selected.text === 'History') {
+                localforage.getItem('POCKET_HISTORY')
+                .then((history) => {
+                  if (history) {
+                    if (history.length > 0) {
+                      var b = [];
+                      history.forEach((i) => {
+                        b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
+                      });
+                      this.$router.showOptionMenu('History', b, 'OPEN', (selected) => {
+                        this.$state.setState('target_url', selected.subtext);
+                        setTimeout(() => {
+                          this.$router.push('browser');
+                        }, 100);
+                      }, () => {
+                        setTimeout(() => {
+                          if (!this.$router.bottomSheet) {
+                            if (this.data.articles[this.verticalNavIndex].isArticle) {
+                              this.$router.setSoftKeyRightText('More');
+                            } else {
+                              this.$router.setSoftKeyRightText('');
+                            }
                           }
-                        }
-                      }, 100);
-                    }, 0);
+                        }, 100);
+                      }, 0);
+                    }
                   }
-                }
-              });
-            } else if (selected.text === 'Clear History') {
-              this.$router.showDialog('Confirm', 'Are you sure to clear history ?', null, 'Yes', () => {
-                localforage.removeItem('POCKET_HISTORY')
-                this.$router.showToast('History Cleared');
-              }, 'No', () => {}, '', () => {}, () => {
+                });
+              } else if (selected.text === 'Clear History') {
+                this.$router.showDialog('Confirm', 'Are you sure to clear history ?', null, 'Yes', () => {
+                  localforage.removeItem('POCKET_HISTORY')
+                  this.$router.showToast('History Cleared');
+                }, 'No', () => {}, '', () => {}, () => {
+                  setTimeout(() => {
+                    if (this.data.articles[this.verticalNavIndex].isArticle) {
+                      this.$router.setSoftKeyRightText('More');
+                    } else {
+                      this.$router.setSoftKeyRightText('');
+                    }
+                  }, 100);
+                });
+              } else if (selected.text ===  'Help & Support') {
+                this.$router.push('helpSupportPage');
+              } else if (selected.text === 'Saved Reader View') {
                 setTimeout(() => {
-                  if (this.data.articles[this.verticalNavIndex].isArticle) {
-                    this.$router.setSoftKeyRightText('More');
-                  } else {
-                    this.$router.setSoftKeyRightText('');
-                  }
-                }, 100);
-              });
-            } else if (selected.text ===  'Help & Support') {
-              this.$router.push('helpSupportPage');
-            } else if (selected.text === 'Saved Reader View') {
-              setTimeout(() => {
-                this.$router.push('offlineArticles');
-              }, 110);
-            } else if (selected.text === 'Kill App') {
-              window.close();
-            } else if (selected.text === 'Enable Javascript' || selected.text === 'Disable Javascript') {
-              this.$state.setState('disableJS', !this.$state.getState('disableJS'));
-            } else if (selected.text === 'Turn Off Bluelight Filter' || selected.text === 'Turn On Bluelight Filter') {
-              if (blueFilter)
-                root.classList.remove('blue-filter')
-              else
-                root.classList.add('blue-filter')
-            }
+                  this.$router.push('offlineArticles');
+                }, 110);
+              } else if (selected.text === 'Kill App') {
+                window.close();
+              } else if (selected.text === 'Enable Javascript' || selected.text === 'Disable Javascript') {
+                this.$state.setState('disableJS', !this.$state.getState('disableJS'));
+              } else if (selected.text === 'Turn Off Bluelight Filter' || selected.text === 'Turn On Bluelight Filter') {
+                if (blueFilter)
+                  root.classList.remove('blue-filter')
+                else
+                  root.classList.add('blue-filter')
+              }
+            }, 100);
           }, () => {
             setTimeout(() => {
               if (!this.$router.bottomSheet && this.$router.stack[this.$router.stack.length - 1].name === 'homepage') {
@@ -1429,39 +1431,41 @@ window.addEventListener("load", function() {
             menu[3] = { "text": "Delete Reader View" }
           }
           this.$router.showOptionMenu(title, menu, 'Select', (selected) => {
-            if (selected.text === 'Open with built-in browser') {
-              this.$state.setState('target_url', current.given_url);
-              this.$router.push('browser');
-            } else if (selected.text === 'Open with KaiOS Browser') {
-              var activity = new MozActivity({
-                name: "view",
-                data: {
-                  type: "url",
-                  url: current.given_url
-                }
-              });
-            } else if (selected.text === 'Delete') {
-              this.methods.deleteArticle();
-            } else if (selected.text === 'Open with Reader View' || selected.text === 'Open with Reader View(TEXT)') {
-              readabilityPage(this.$router, current.given_url, current.resolved_title, false, selected.text === 'Open with Reader View(TEXT)');
-            } else if (selected.text === 'Save Reader View') {
-              readabilityPage(this.$router, current.given_url, '', true);
-            } else if (selected.text === 'Delete Reader View') {
-              localforage.getItem('ARTICLES')
-              .then((articles) => {
-                var filtered = [];
-                if (articles != null) {
-                  filtered = articles.filter(function(a) {
-                    return a.hashid != id;
-                  });
-                  localforage.setItem('ARTICLES', filtered)
-                  .then(() => {
-                    localforage.removeItem('CONTENT___' + id)
-                    this.$router.showToast('Success');
-                  });
-                }
-              })
-            }
+            setTimeout(() => {
+              if (selected.text === 'Open with built-in browser') {
+                this.$state.setState('target_url', current.given_url);
+                this.$router.push('browser');
+              } else if (selected.text === 'Open with KaiOS Browser') {
+                var activity = new MozActivity({
+                  name: "view",
+                  data: {
+                    type: "url",
+                    url: current.given_url
+                  }
+                });
+              } else if (selected.text === 'Delete') {
+                this.methods.deleteArticle();
+              } else if (selected.text === 'Open with Reader View' || selected.text === 'Open with Reader View(TEXT)') {
+                readabilityPage(this.$router, current.given_url, current.resolved_title, false, selected.text === 'Open with Reader View(TEXT)');
+              } else if (selected.text === 'Save Reader View') {
+                readabilityPage(this.$router, current.given_url, '', true);
+              } else if (selected.text === 'Delete Reader View') {
+                localforage.getItem('ARTICLES')
+                .then((articles) => {
+                  var filtered = [];
+                  if (articles != null) {
+                    filtered = articles.filter(function(a) {
+                      return a.hashid != id;
+                    });
+                    localforage.setItem('ARTICLES', filtered)
+                    .then(() => {
+                      localforage.removeItem('CONTENT___' + id)
+                      this.$router.showToast('Success');
+                    });
+                  }
+                })
+              }
+            }, 100);
           }, () => {
             setTimeout(() => {
               if (!this.$router.bottomSheet) {
