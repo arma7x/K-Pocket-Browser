@@ -8,6 +8,7 @@ window.addEventListener("load", function() {
   const COUNT = 24;
   var IFRAME_TIMER;
   var VOLUME_CONTROL_TIMER;
+  var KAIOS_BROWSER_TIMER;
 
   const state = new KaiState({
     'target_url': '',
@@ -538,7 +539,8 @@ window.addEventListener("load", function() {
               this.$state.setState('target_url', current.url);
               this.$router.push('browser');
             } else if (selected.text === 'Open with KaiOS Browser') {
-              window.open(current.url);
+              const KAIOS_BROWSER = window.open(current.url);
+              startKaiOsBrowserTimer(KAIOS_BROWSER);
             } else if (selected.text === 'Open with Reader View(TEXT)'){
               readabilityPage(this.$router, current.hashid, current.title, false, true);
             }
@@ -933,7 +935,8 @@ window.addEventListener("load", function() {
                     }
                   });
                 } else if (selected.text ===  'Open with KaiOS Browser') {
-                  window.open(window['currentTab'].url.url);
+                  const KAIOS_BROWSER = window.open(window['currentTab'].url.url);
+                  startKaiOsBrowserTimer(KAIOS_BROWSER);
                 } else if (selected.text === 'Open with Reader View' || selected.text === 'Open with Reader View(TEXT)') {
                   if (window['currentTab'].title === 'string') {
                     readabilityPage(this.$router, window['currentTab'].url.url, title, false, selected.text === 'Open with Reader View(TEXT)');
@@ -1389,6 +1392,7 @@ window.addEventListener("load", function() {
                 window.close();
               } else if (selected.text === 'Enable Javascript' || selected.text === 'Disable Javascript') {
                 this.$state.setState('disableJS', !this.$state.getState('disableJS'));
+                this.$router.showToast(this.$state.getState('disableJS') ? 'Javascript disabled' : 'Javascript enabled');
               } else if (selected.text === 'Turn Off Bluelight Filter' || selected.text === 'Turn On Bluelight Filter') {
                 if (blueFilter)
                   root.classList.remove('blue-filter')
@@ -1442,7 +1446,8 @@ window.addEventListener("load", function() {
                 this.$state.setState('target_url', current.given_url);
                 this.$router.push('browser');
               } else if (selected.text === 'Open with KaiOS Browser') {
-                window.open(current.given_url);
+                const KAIOS_BROWSER = window.open(current.given_url);
+                startKaiOsBrowserTimer(KAIOS_BROWSER);
               } else if (selected.text === 'Delete') {
                 this.methods.deleteArticle();
               } else if (selected.text === 'Open with Reader View' || selected.text === 'Open with Reader View(TEXT)') {
@@ -1589,6 +1594,21 @@ window.addEventListener("load", function() {
   }
 
   displayKaiAds();
+
+  function startKaiOsBrowserTimer(KAIOS_BROWSER) {
+    KAIOS_BROWSER_TIMER = setInterval(() => {
+      const browser = app.$router.stack[app.$router.stack.length - 1];
+      if (KAIOS_BROWSER.closed && browser.name === 'browser') {
+        navigator.spatialNavigationEnabled = true;
+        clearInterval(KAIOS_BROWSER_TIMER);
+        KAIOS_BROWSER_TIMER = null;
+      } else if (KAIOS_BROWSER.closed) {
+        navigator.spatialNavigationEnabled = false;
+        clearInterval(KAIOS_BROWSER_TIMER);
+        KAIOS_BROWSER_TIMER = null;
+      }
+    }, 500);
+  }
 
   var EXIT_STACK = 0;
   document.addEventListener('keydown', (evt) => {
