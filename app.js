@@ -284,6 +284,8 @@ window.addEventListener("load", function() {
         ~ to speed up web page rendering (may not work on some websites)<br><br>
         <b>Menu > Turn On/Off Bluelight Filter</b><br>
         ~ to toggle Bluelight filter(reduce eye strain)<br><br>
+        <b>Web Browser > Menu > Volume Control(new)</b><br>
+        ~ to control the sound volume<br><br>
       <b>Download Content</b><br>
         <b>~</b> Download web content, such as <b>https://example.com/photo.jpg</b> in Web Browser.<br>
         <b>~</b> Support image, audio, video, etc<br>
