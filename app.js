@@ -714,6 +714,8 @@ window.addEventListener("load", function() {
       },
       rightMenu: function() {
         const sk = document.getElementById('__kai_soft_key__');
+        const root = document.getElementsByTagName( 'html' )[0];
+        const blueFilter = root.classList.contains('blue-filter');
         if (document.activeElement.tagName === 'IFRAME') {
           document.activeElement.blur();
           document.getElementById('search-menu').classList.remove('sr-only');
@@ -803,6 +805,7 @@ window.addEventListener("load", function() {
               menus.push({ "text": "Bookmarks" });
               menus.push({ "text": "History" });
               menus.push({ "text": "Clear History" });
+              menus.push({ "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' });
               menus.push({ "text": "Volume Control" });
               menus.push({ "text": "Quit" });
               sk.classList.remove("sr-only");
@@ -988,6 +991,11 @@ window.addEventListener("load", function() {
                       VOLUME_CONTROL_TIMER = null;
                     }, 2000);
                   }, 100);
+                }  else if (selected.text === 'Turn Off Bluelight Filter' || selected.text === 'Turn On Bluelight Filter') {
+                  if (blueFilter)
+                    root.classList.remove('blue-filter')
+                  else
+                    root.classList.add('blue-filter')
                 } else if (selected.text === 'Quit') {
                   this.$state.setState('target_url', '');
                   this.$router.pop();
