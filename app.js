@@ -349,7 +349,8 @@ window.addEventListener("load", function() {
         ~ Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br>
         ~ Press Call Button x 3(consecutively) to kill app<br><br>
         <b>Menu > QR Code Reader(NEW)</b><br>
-        ~ scan QR Code(URL or text) and open it in browser<br><br>
+        ~ scan QR Code(URL or text) and open it in browser<br>
+        ~ To fix camera permission, Goto Settings > Privacy & Security > App Permissions > K-Pocket Browser > Camera and select Grant<br><br>
         <b>Menu > Disable Javascript</b><br>
         ~ to speed up web page rendering (may not work on some websites)<br><br>
         <b>Menu > Turn On/Off Bluelight Filter</b><br>
