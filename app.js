@@ -1,4 +1,4 @@
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.8.0';
 
 window.addEventListener("load", function() {
 
@@ -270,6 +270,74 @@ window.addEventListener("load", function() {
     });
   }
 
+  const qrReader = function($router, cb = () => {}) {
+      $router.push(
+        new Kai({
+        name: 'qrReader',
+        data: {
+          title: 'qrReader'
+        },
+        template: `<div class="kui-flex-wrap">
+            <style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style>
+            <video id="qr_video" height="320" width="240" autoplay></video>
+        </div>`,
+        mounted: function() {
+          navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: { width: 240, height: 320 }
+          })
+          .then((stream) => {
+            const video = document.getElementById("qr_video");
+            video.srcObject = stream;
+            video.onloadedmetadata = (e) => {
+              video.play();
+              var barcodeCanvas = document.createElement("canvas");
+              window['SCAN_QR'] = setInterval(() => {
+                barcodeCanvas.width = video.videoWidth;
+                barcodeCanvas.height = video.videoHeight;
+                var barcodeContext = barcodeCanvas.getContext("2d");
+                var imageWidth = Math.max(1, Math.floor(video.videoWidth)),imageHeight = Math.max(1, Math.floor(video.videoHeight));
+                barcodeContext.drawImage(video, 0, 0, imageWidth, imageHeight);
+                var imageData = barcodeContext.getImageData(0, 0, imageWidth, imageHeight);
+                var idd = imageData.data;
+                let code = jsQR(idd, imageWidth, imageHeight);
+                if (code) {
+                  cb(code.data);
+                }
+              }, 1000);
+            };
+          }).catch((err) => {
+            $router.showToast(err.toString());
+          });
+        },
+        unmounted: function() {
+          if (window['SCAN_QR']) {
+            clearInterval(window['SCAN_QR']);
+            window['SCAN_QR'] = null;
+          }
+          const video = document.getElementById("qr_video");
+          const stream = video.srcObject;
+          const tracks = stream.getTracks();
+          tracks.forEach(function (track) {
+            track.stop();
+          });
+          video.srcObject = null;
+        },
+        methods: {},
+        softKeyText: { left: '', center: '', right: '' },
+        softKeyListener: {
+          left: function() {},
+          center: function() {},
+          right: function() {}
+        },
+        dPadNavListener: {
+          arrowUp: function() {},
+          arrowDown: function() {}
+        }
+      })
+    );
+  }
+
   const helpSupportPage = new Kai({
     name: 'helpSupportPage',
     data: {
@@ -278,13 +346,15 @@ window.addEventListener("load", function() {
     template: `<div style="padding:4px;font-size:14px;">
       <style>.kui-software-key{height:0px}#__kai_router__{height:266px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}</style>
       <b>NOTICE</b><br>
-        ~ Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br><br>
-        <b>Press Call Button x 3(consecutively) to kill app</b><br><br>
+        ~ Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br>
+        ~ Press Call Button x 3(consecutively) to kill app<br><br>
+        <b>Menu > QR Code Reader(NEW)</b><br>
+        ~ scan QR Code(URL or text) and open it in browser<br><br>
         <b>Menu > Disable Javascript</b><br>
         ~ to speed up web page rendering (may not work on some websites)<br><br>
         <b>Menu > Turn On/Off Bluelight Filter</b><br>
         ~ to toggle Bluelight filter(reduce eye strain)<br><br>
-        <b>Web Browser > Menu > Volume Control(new)</b><br>
+        <b>Web Browser > Menu > Volume Control</b><br>
         ~ to control the sound volume<br><br>
       <b>Download Content</b><br>
         <b>~</b> Download web content, such as <b>https://example.com/photo.jpg</b> in Web Browser.<br>
@@ -1141,11 +1211,10 @@ window.addEventListener("load", function() {
           }
         }
       });
-
       localforage.getItem('APP_VERSION')
       .then((v) => {
         if (v == null || v != APP_VERSION) {
-          this.$router.showDialog('New Updates', `- add Volume Control to Web Browser menu<br>- open blocked iframe website with KaiOS Browser<br>- replace MozActivity with window.open() to launch URL in KaiOS Browser`, null, ' ', () => {}, 'Close', () => {}, ' ', null, () => {});
+          this.$router.showToast(`Go to Menu> Help & Support to read about new updates`);
         }
         localforage.setItem('APP_VERSION', APP_VERSION)
       });
@@ -1279,34 +1348,27 @@ window.addEventListener("load", function() {
           const JS = this.$state.getState('disableJS') ? 'Enable Javascript' : 'Disable Javascript';
           const blueFilter = root.classList.contains('blue-filter');
           var title = 'Menu';
-          var menu = [
-            { "text": "Help & Support" },
-            { "text": "Login" },
+          var menu = [{ "text": "Help & Support" }];
+          if (res) {
+            title = res.username;
+            menu.push({ "text": "Refresh" });
+          } else {
+            menu.push({ "text": "Login" });
+          }
+          menu.push(
             { "text": "Web Browser" },
+            { "text": "QR Code Reader" },
             { "text": "Saved Reader View" },
             { "text": "Bookmarks" },
             { "text": "History" },
             { "text": "Clear History" },
             { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' },
-            { "text": JS },
-            { "text": "Kill App" }
-          ];
+            { "text": JS }
+          );
           if (res) {
-            title = res.username;
-            menu = [
-              { "text": "Help & Support" },
-              { "text": "Refresh" },
-              { "text": "Web Browser" },
-              { "text": "Saved Reader View" },
-              { "text": "Bookmarks" },
-              { "text": "History" },
-              { "text": "Clear History" },
-              { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' },
-              { "text": JS },
-              { "text": "Logout" },
-              { "text": "Kill App" }
-            ];
+            menu.push({ "text": "Logout" });
           }
+          menu.push({ "text": "Kill App" });
           this.$router.showOptionMenu(title, menu, 'Select', (selected) => {
             setTimeout(() => {
               if (selected.text === 'Login') {
@@ -1408,6 +1470,14 @@ window.addEventListener("load", function() {
                   root.classList.remove('blue-filter')
                 else
                   root.classList.add('blue-filter')
+              } else if (selected.text === 'QR Code Reader') {
+                qrReader(this.$router, (str) => {
+                  this.$router.pop();
+                  this.$state.setState('target_url', str);
+                  setTimeout(() => {
+                    this.$router.push('browser');
+                  }, 200);
+                });
               }
             }, 100);
           }, () => {
@@ -1596,9 +1666,12 @@ window.addEventListener("load", function() {
       onerror: err => console.error(err),
       onready: ad => {
         ad.call('display')
-        setTimeout(() => {
+        ad.on('close', () => {
           document.body.style.position = '';
-        }, 1000);
+        });
+        ad.on('display', () => {
+          document.body.style.position = '';
+        });
       }
     })
   }

@@ -166,7 +166,7 @@ const KaiRouter = (function() {
     if (pathname.length === 0) {
       pathname = '/index.html';
     }
-    if ((paths.length > 0 && this.stack.length) > 0 && (paths.length === this.stack.length)) {
+    if ((paths.length > 0 && this.stack.length > 0) && (paths.length === this.stack.length)) {
       var r = false;
       if ((this.stack.length - 1) > 0) {
         paths.pop();
@@ -255,11 +255,11 @@ const KaiRouter = (function() {
       DOM.classList.remove('kui-overlay-visible-no-sk');
     }
     setTimeout(() => {
-      if (component.verticalNavIndex > -1) {
+      if (component.verticalNavIndex > -1 && (this.stack[this.stack.length - 1].name === component.name)) {
         component.verticalNavIndex -= 1;
         component.dPadNavListener.arrowDown();
       }
-    }, 10);
+    }, 100);
   }
 
   KaiRouter.prototype.showDialog = function(title, body, dataCb, positiveText, positiveCb, negativeText, negativeCb, neutralText, neutralCb, closeCb) {
