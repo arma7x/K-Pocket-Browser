@@ -1222,7 +1222,7 @@ window.addEventListener("load", function() {
       localforage.getItem('APP_VERSION')
       .then((v) => {
         if (v == null || v != APP_VERSION) {
-          this.$router.showToast(`Go to Menu> Help & Support to read about new updates`);
+          this.$router.showToast(`Go to Menu > Help & Support to read about new updates`);
         }
         localforage.setItem('APP_VERSION', APP_VERSION)
       });
@@ -1673,6 +1673,7 @@ window.addEventListener("load", function() {
       slot: 'kaios',
       onerror: err => console.error(err),
       onready: ad => {
+        app.$router.hideBottomSheet();
         ad.call('display')
         ad.on('close', () => {
           document.body.style.position = '';
