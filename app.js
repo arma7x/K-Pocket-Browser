@@ -282,6 +282,9 @@ window.addEventListener("load", function() {
             <video id="qr_video" height="320" width="240" autoplay></video>
         </div>`,
         mounted: function() {
+          setTimeout(() => {
+            navigator.spatialNavigationEnabled = false;
+          }, 100);
           navigator.mediaDevices.getUserMedia({
             audio: false,
             video: { width: 240, height: 320 }
@@ -350,8 +353,8 @@ window.addEventListener("load", function() {
         ~ Press Call Button x 3(consecutively) to kill app<br><br>
         <b>QR Code Reader(NEW)</b><br>
         ~ scan QR Code(URL or text) and open it in browser<br>
-        ~ available on <b>Menu > QR Code Reader</b> or <b>Web Browser > Menu > QR Code Reader</b><br>
-        ~ to fix camera permission, Goto Settings > Privacy & Security > App Permissions > K-Pocket Browser > Camera and select Grant<br><br>
+        ~ available on main screen and web browser<br>
+        ~ to fix camera permission, Goto <i>Settings > Privacy & Security > App Permissions > K-Pocket Browser > Camera and select Grant</i><br><br>
         <b>Menu > Disable Javascript</b><br>
         ~ to speed up web page rendering (may not work on some websites)<br><br>
         <b>Menu > Turn On/Off Bluelight Filter</b><br>
@@ -1205,26 +1208,28 @@ window.addEventListener("load", function() {
       setTimeout(() => {
         navigator.spatialNavigationEnabled = false;
       }, 100);
-      localforage.getItem('POCKET_ACCESS_TOKEN')
-      .then((POCKET_ACCESS_TOKEN) => {
-        if (POCKET_ACCESS_TOKEN != null) {
-          this.setData({ POCKET_ACCESS_TOKEN: POCKET_ACCESS_TOKEN });
-          if (this.data.offset === -1) {
-            this.methods.loadArticles(0);
-          } else {
-            if (this.data.articles.length > 0) {
-              if (!this.$router.bottomSheet)
-                this.$router.setSoftKeyRightText('More');
-            }
-          }
-        }
-      });
       localforage.getItem('APP_VERSION')
       .then((v) => {
         if (v == null || v != APP_VERSION) {
-          this.$router.showToast(`Go to Menu > Help & Support to read about new updates`);
+          this.$router.showToast(`Read about new updates`);
+          this.$router.push('helpSupportPage');
+          localforage.setItem('APP_VERSION', APP_VERSION)
+        } else {
+          localforage.getItem('POCKET_ACCESS_TOKEN')
+          .then((POCKET_ACCESS_TOKEN) => {
+            if (POCKET_ACCESS_TOKEN != null) {
+              this.setData({ POCKET_ACCESS_TOKEN: POCKET_ACCESS_TOKEN });
+              if (this.data.offset === -1) {
+                this.methods.loadArticles(0);
+              } else {
+                if (this.data.articles.length > 0) {
+                  if (!this.$router.bottomSheet)
+                    this.$router.setSoftKeyRightText('More');
+                }
+              }
+            }
+          });
         }
-        localforage.setItem('APP_VERSION', APP_VERSION)
       });
     },
     unmounted: function() {},
@@ -1673,12 +1678,13 @@ window.addEventListener("load", function() {
       slot: 'kaios',
       onerror: err => console.error(err),
       onready: ad => {
-        app.$router.hideBottomSheet();
         ad.call('display')
         ad.on('close', () => {
+          app.$router.hideBottomSheet();
           document.body.style.position = '';
         });
         ad.on('display', () => {
+          app.$router.hideBottomSheet();
           document.body.style.position = '';
         });
       }
