@@ -348,9 +348,10 @@ window.addEventListener("load", function() {
       <b>NOTICE</b><br>
         ~ Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br>
         ~ Press Call Button x 3(consecutively) to kill app<br><br>
-        <b>Menu > QR Code Reader(NEW)</b><br>
+        <b>QR Code Reader(NEW)</b><br>
         ~ scan QR Code(URL or text) and open it in browser<br>
-        ~ To fix camera permission, Goto Settings > Privacy & Security > App Permissions > K-Pocket Browser > Camera and select Grant<br><br>
+        ~ available on <b>Menu > QR Code Reader</b> or <b>Web Browser > Menu > QR Code Reader</b><br>
+        ~ to fix camera permission, Goto Settings > Privacy & Security > App Permissions > K-Pocket Browser > Camera and select Grant<br><br>
         <b>Menu > Disable Javascript</b><br>
         ~ to speed up web page rendering (may not work on some websites)<br><br>
         <b>Menu > Turn On/Off Bluelight Filter</b><br>
@@ -879,6 +880,7 @@ window.addEventListener("load", function() {
               menus.push({ "text": "History" });
               menus.push({ "text": "Clear History" });
               menus.push({ "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' });
+              menus.push({ "text": 'QR Code Reader' });
               menus.push({ "text": "Volume Control" });
               menus.push({ "text": "Quit" });
               sk.classList.remove("sr-only");
@@ -1069,6 +1071,11 @@ window.addEventListener("load", function() {
                     root.classList.remove('blue-filter')
                   else
                     root.classList.add('blue-filter')
+                } else if (selected.text === 'QR Code Reader') {
+                  qrReader(this.$router, (str) => {
+                    this.$state.setState('target_url', str);
+                    this.$router.pop();
+                  });
                 } else if (selected.text === 'Quit') {
                   this.$state.setState('target_url', '');
                   this.$router.pop();
