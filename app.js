@@ -271,24 +271,18 @@ window.addEventListener("load", function() {
   }
 
   const qrReader = function($router, cb = () => {}) {
-      $router.push(
-        new Kai({
+    $router.showBottomSheet(
+      new Kai({
         name: 'qrReader',
         data: {
           title: 'qrReader'
         },
-        template: `<div class="kui-flex-wrap">
-            <style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style>
-            <video id="qr_video" height="320" width="240" autoplay></video>
-        </div>`,
+        template: `<div class="kui-flex-wrap" style="overflow:hidden!important;height:264px;"><video id="qr_video" height="320" width="240" autoplay></video></div>`,
         mounted: function() {
           setTimeout(() => {
             navigator.spatialNavigationEnabled = false;
           }, 100);
-          navigator.mediaDevices.getUserMedia({
-            audio: false,
-            video: { width: 240, height: 320 }
-          })
+          navigator.mediaDevices.getUserMedia({ audio: false, video: true })
           .then((stream) => {
             const video = document.getElementById("qr_video");
             video.srcObject = stream;
@@ -314,6 +308,7 @@ window.addEventListener("load", function() {
           });
         },
         unmounted: function() {
+          cb(null);
           if (window['SCAN_QR']) {
             clearInterval(window['SCAN_QR']);
             window['SCAN_QR'] = null;
@@ -352,7 +347,7 @@ window.addEventListener("load", function() {
         <b>~</b> Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br>
         <div style="height:3px;"></div>
         <b>~</b> Press Call button 3 times in a row to close the app<br><br>
-        <b>QR Code(NEW)</b><br>
+      <b>QR Code(NEW)</b><br>
         <b>~</b> scan QR Code(URL or text) and open it in web browser<br>
         <div style="height:3px;"></div>
         <b>~</b> generate QR Code from URL<br>
@@ -360,6 +355,8 @@ window.addEventListener("load", function() {
         <b>~</b> available on main screen and web browser<br>
         <div style="height:3px;"></div>
         <b>~</b> to fix camera permission, Goto <i>Settings > Privacy & Security > App Permissions > K-Pocket Browser > Camera and select Grant</i><br><br>
+      <b>Share URL(NEW)</b><br>
+        <b>~</b> Share URL via SMS or other messaging apps<br><br>
       <b>Menu > Disable Javascript</b><br>
         <b>~</b> to speed up web page rendering (may not work on some websites)<br><br>
       <b>Menu > Turn On/Off Bluelight Filter</b><br>
@@ -894,6 +891,7 @@ window.addEventListener("load", function() {
               menus.push({ "text": "History" });
               menus.push({ "text": "Clear History" });
               menus.push({ "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' });
+              menus.push({ "text": 'Share URL' });
               menus.push({ "text": 'Scan QR Code' });
               menus.push({ "text": 'Generate QR Code' });
               menus.push({ "text": "Volume Control" });
@@ -1088,8 +1086,19 @@ window.addEventListener("load", function() {
                     root.classList.add('blue-filter')
                 } else if (selected.text === 'Scan QR Code') {
                   qrReader(this.$router, (str) => {
-                    this.$state.setState('target_url', str);
-                    this.$router.pop();
+                    this.$router.hideBottomSheet();
+                    sk.classList.add("sr-only");
+                    navigator.spatialNavigationEnabled = true;
+                    if (str) {
+                      this.$state.setState('target_url', str);
+                      var _url = this.$state.getState('target_url');
+                      if (_url === '') {
+                        _url = 'https://www.google.com/';
+                      } else if (!validURL(_url)) {
+                        _url = 'https://www.google.com/search?q=' + _url;
+                      }
+                      window['currentTab'].iframe.src = _url;
+                    }
                   });
                 }  else if (selected.text === 'Generate QR Code') {
                   this.$router.showDialog('QR CODE', `<div id="qrcode" style="margin-left:3px;"></div>`, null, ' ', () => {}, 'Close', () => {}, ' ', () => {}, () => {
@@ -1113,6 +1122,27 @@ window.addEventListener("load", function() {
                       correctLevel : QRCode.CorrectLevel.H
                     });
                   }, 50);
+                } else if (selected.text === 'Share URL') {
+                  setTimeout(() => {
+                    navigator.spatialNavigationEnabled = false;
+                  }, 110);
+                  const share = new MozActivity({
+                    name: "new",
+                    data: {
+                      type: "websms/sms",
+                      body: window['currentTab'].url.url,
+                    }
+                  });
+                  share.onsuccess = () => {
+                    setTimeout(() => {
+                      navigator.spatialNavigationEnabled = true;
+                    }, 500);
+                  }
+                  share.onerror = () => {
+                    setTimeout(() => {
+                      navigator.spatialNavigationEnabled = true;
+                    }, 500);
+                  }
                 } else if (selected.text === 'Quit') {
                   this.$state.setState('target_url', '');
                   this.$router.pop();
@@ -1245,7 +1275,7 @@ window.addEventListener("load", function() {
       localforage.getItem('APP_VERSION')
       .then((v) => {
         if (v == null || v != APP_VERSION) {
-          this.$router.showToast(`Read about new updates`);
+          this.$router.showToast(`Read about 2 new updates`);
           this.$router.push('helpSupportPage');
           localforage.setItem('APP_VERSION', APP_VERSION)
         } else {
@@ -1519,11 +1549,13 @@ window.addEventListener("load", function() {
                   root.classList.add('blue-filter')
               } else if (selected.text === 'Scan QR Code') {
                 qrReader(this.$router, (str) => {
-                  this.$router.pop();
-                  this.$state.setState('target_url', str);
-                  setTimeout(() => {
-                    this.$router.push('browser');
-                  }, 200);
+                  this.$router.hideBottomSheet();
+                  if (str) {
+                    this.$state.setState('target_url', str);
+                    setTimeout(() => {
+                      this.$router.push('browser');
+                    }, 200);
+                  }
                 });
               }
             }, 100);
