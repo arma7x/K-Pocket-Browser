@@ -1,4 +1,4 @@
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.8.1';
 
 window.addEventListener("load", function() {
 
@@ -349,26 +349,37 @@ window.addEventListener("load", function() {
     template: `<div style="padding:4px;font-size:14px;">
       <style>.kui-software-key{height:0px}#__kai_router__{height:266px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}</style>
       <b>NOTICE</b><br>
-        ~ Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br>
-        ~ Press Call Button x 3(consecutively) to kill app<br><br>
-        <b>QR Code Reader(NEW)</b><br>
-        ~ scan QR Code(URL or text) and open it in browser<br>
-        ~ available on main screen and web browser<br>
-        ~ to fix camera permission, Goto <i>Settings > Privacy & Security > App Permissions > K-Pocket Browser > Camera and select Grant</i><br><br>
-        <b>Menu > Disable Javascript</b><br>
-        ~ to speed up web page rendering (may not work on some websites)<br><br>
-        <b>Menu > Turn On/Off Bluelight Filter</b><br>
-        ~ to toggle Bluelight filter(reduce eye strain)<br><br>
-        <b>Web Browser > Menu > Volume Control</b><br>
-        ~ to control the sound volume<br><br>
+        <b>~</b> Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br>
+        <div style="height:3px;"></div>
+        <b>~</b> Press Call button 3 times in a row to close the app<br><br>
+        <b>QR Code(NEW)</b><br>
+        <b>~</b> scan QR Code(URL or text) and open it in web browser<br>
+        <div style="height:3px;"></div>
+        <b>~</b> generate QR Code from URL<br>
+        <div style="height:3px;"></div>
+        <b>~</b> available on main screen and web browser<br>
+        <div style="height:3px;"></div>
+        <b>~</b> to fix camera permission, Goto <i>Settings > Privacy & Security > App Permissions > K-Pocket Browser > Camera and select Grant</i><br><br>
+      <b>Menu > Disable Javascript</b><br>
+        <b>~</b> to speed up web page rendering (may not work on some websites)<br><br>
+      <b>Menu > Turn On/Off Bluelight Filter</b><br>
+        <b>~</b> to toggle Bluelight filter(reduce eye strain)<br><br>
+      <b>Web Browser > Menu > Volume Control</b><br>
+        <b>~</b> to control the sound volume<br><br>
       <b>Download Content</b><br>
         <b>~</b> Download web content, such as <b>https://example.com/photo.jpg</b> in Web Browser.<br>
+        <div style="height:3px;"></div>
         <b>~</b> Support image, audio, video, etc<br>
+        <div style="height:3px;"></div>
         <b>~</b> Only support direct url, not streaming url<br>
+        <div style="height:3px;"></div>
         <b>~</b> Click <b>Web Browser > Menu > Download Content</b><br><br>
       <b>Reader View</b><br>
-        ~ Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br>
-        ~ <b>Open with Reader View(TEXT)</b> mode only extract text<b></b><br><br>
+        <b>~</b> Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br>
+        <div style="height:3px;"></div>
+        <b>~</b> <b>Open with Reader View</b> render all element<b></b><br>
+        <div style="height:3px;"></div>
+        <b>~</b> <b>Open with Reader View(TEXT)</b> only extract text<b></b><br><br>
       <b>Reader View Shortcut Key</b><br>
         <b>*</b> Screenshot viewport<br>
         <b>#</b> Screenshot entire page<br>
@@ -883,7 +894,8 @@ window.addEventListener("load", function() {
               menus.push({ "text": "History" });
               menus.push({ "text": "Clear History" });
               menus.push({ "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' });
-              menus.push({ "text": 'QR Code Reader' });
+              menus.push({ "text": 'Scan QR Code' });
+              menus.push({ "text": 'Generate QR Code' });
               menus.push({ "text": "Volume Control" });
               menus.push({ "text": "Quit" });
               sk.classList.remove("sr-only");
@@ -1074,11 +1086,33 @@ window.addEventListener("load", function() {
                     root.classList.remove('blue-filter')
                   else
                     root.classList.add('blue-filter')
-                } else if (selected.text === 'QR Code Reader') {
+                } else if (selected.text === 'Scan QR Code') {
                   qrReader(this.$router, (str) => {
                     this.$state.setState('target_url', str);
                     this.$router.pop();
                   });
+                }  else if (selected.text === 'Generate QR Code') {
+                  this.$router.showDialog('QR CODE', `<div id="qrcode" style="margin-left:3px;"></div>`, null, ' ', () => {}, 'Close', () => {}, ' ', () => {}, () => {
+                    if (this.$router.stack[this.$router.stack.length - 1].name === 'browser') {
+                      sk.classList.add("sr-only");
+                      navigator.spatialNavigationEnabled = true;
+                    } else if (this.$router.stack.length > 2) {
+                      if (this.$router.stack[this.$router.stack.length - 2].name === 'browser') {
+                        sk.classList.add("sr-only");
+                        navigator.spatialNavigationEnabled = true;
+                      }
+                    }
+                  });
+                  setTimeout(() => {
+                    new QRCode(document.getElementById("qrcode"), {
+                      text: window['currentTab'].url.url,
+                      width: 225,
+                      height: 225,
+                      colorDark : "#000000",
+                      colorLight : "#ffffff",
+                      correctLevel : QRCode.CorrectLevel.H
+                    });
+                  }, 50);
                 } else if (selected.text === 'Quit') {
                   this.$state.setState('target_url', '');
                   this.$router.pop();
@@ -1370,7 +1404,7 @@ window.addEventListener("load", function() {
           }
           menu.push(
             { "text": "Web Browser" },
-            { "text": "QR Code Reader" },
+            { "text": "Scan QR Code" },
             { "text": "Saved Reader View" },
             { "text": "Bookmarks" },
             { "text": "History" },
@@ -1483,7 +1517,7 @@ window.addEventListener("load", function() {
                   root.classList.remove('blue-filter')
                 else
                   root.classList.add('blue-filter')
-              } else if (selected.text === 'QR Code Reader') {
+              } else if (selected.text === 'Scan QR Code') {
                 qrReader(this.$router, (str) => {
                   this.$router.pop();
                   this.$state.setState('target_url', str);
