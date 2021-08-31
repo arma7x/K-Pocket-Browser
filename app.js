@@ -1,4 +1,4 @@
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.9.0';
 
 window.addEventListener("load", function() {
 
@@ -16,7 +16,7 @@ window.addEventListener("load", function() {
     'disableJS': false,
   });
 
-  function takeScreenshot(evt) {
+  function takeScreenshot(title, evt) {
     if (evt.key == '*') {
       html2canvas(document.querySelector("#__kai_router__")).then(canvas => {
         canvas.toBlob((blob) => {
@@ -29,6 +29,35 @@ window.addEventListener("load", function() {
           saveAs(blob, `${new Date().getTime().toString()}.png`); 
         });
       });
+    } else if (evt.key == 'Call') {
+      try {
+        const blob = new Blob([document.querySelector("#__readabilityPage__").innerHTML], {type : 'text/html'});
+        saveAs(blob, `${title}_${new Date().getTime().toString()}.html`)
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  }
+
+
+  function getURLParam(key, target) {
+    var values = [];
+    if (!target) target = location.href;
+    key = key.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+    var pattern = key + '=([^&#]+)';
+    var o_reg = new RegExp(pattern,'ig');
+    while (true){
+      var matches = o_reg.exec(target);
+      if (matches && matches[1]){
+        values.push(matches[1]);
+      } else {
+        break;
+      }
+    }
+    if (!values.length){
+      return [];
+    } else {
+      return values.length == 1 ? [values[0]] : values;
     }
   }
 
@@ -100,7 +129,7 @@ window.addEventListener("load", function() {
     });
   }
 
-  const readabilityPage = function($router, url, title, save, textOnly = false) {
+  const readabilityPage = function($router, url, title = '', save, textOnly = false) {
     navigator.spatialNavigationEnabled = false;
     var hashids = new Hashids(url, 10);
     var id = hashids.encode(1);
@@ -119,12 +148,17 @@ window.addEventListener("load", function() {
               setTimeout(() => {
                 navigator.spatialNavigationEnabled = false;
               }, 100);
-              document.addEventListener('keydown', takeScreenshot);
+              document.addEventListener('keydown', this.methods.takeScreenshot);
             },
             unmounted: function() {
-              document.removeEventListener('keydown', takeScreenshot);
+              document.removeEventListener('keydown', this.methods.takeScreenshot);
             },
             template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4><span id="articleBody" style="font-size: 100%;">' + article + '</span></div>',
+            methods: {
+              takeScreenshot: function(evt) {
+                takeScreenshot(title, evt);
+              }
+            },
             dPadNavListener: {
               arrowRight: function() {},
               arrowLeft: function() {},
@@ -188,12 +222,17 @@ window.addEventListener("load", function() {
               setTimeout(() => {
                 navigator.spatialNavigationEnabled = false;
               }, 100);
-              document.addEventListener('keydown', takeScreenshot);
+              document.addEventListener('keydown', this.methods.takeScreenshot);
             },
             unmounted: function() {
-              document.removeEventListener('keydown', takeScreenshot);
+              document.removeEventListener('keydown', this.methods.takeScreenshot);
             },
             template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:4px;">' + res.title + '</h4><span id="articleBody" style="font-size: 100%;">' + clean + '</span></div>',
+            methods: {
+              takeScreenshot: function(evt) {
+                takeScreenshot(title, evt);
+              }
+            },
             dPadNavListener: {
               arrowRight: function() {},
               arrowLeft: function() {},
@@ -341,58 +380,31 @@ window.addEventListener("load", function() {
     data: {
       title: 'helpSupportPage'
     },
-    template: `<div style="padding:4px;font-size:14px;">
-      <style>.kui-software-key{height:0px}#__kai_router__{height:266px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}</style>
-      <b>NOTICE</b><br>
-        <b>~</b> Save button within the https://getpocket.com/explore is not working. Please use <b>Save to GetPocket</b> to save website you visited to your GetPocket account<br>
-        <div style="height:3px;"></div>
-        <b>~</b> Press Call button 3 times in a row to close the app<br><br>
-      <b>QR Code(NEW)</b><br>
-        <b>~</b> scan QR Code(URL or text) and open it in web browser<br>
-        <div style="height:3px;"></div>
-        <b>~</b> generate QR Code from URL<br>
-        <div style="height:3px;"></div>
-        <b>~</b> available on main screen and web browser<br>
-        <div style="height:3px;"></div>
-        <b>~</b> to fix camera permission, Goto <i>Settings > Privacy & Security > App Permissions > K-Pocket Browser > Camera and select Grant</i><br><br>
-      <b>Share URL(NEW)</b><br>
-        <b>~</b> Share URL via SMS or other messaging apps<br><br>
-      <b>Menu > Disable Javascript</b><br>
-        <b>~</b> to speed up web page rendering (may not work on some websites)<br><br>
-      <b>Menu > Turn On/Off Bluelight Filter</b><br>
-        <b>~</b> to toggle Bluelight filter(reduce eye strain)<br><br>
-      <b>Web Browser > Menu > Volume Control</b><br>
-        <b>~</b> to control the sound volume<br><br>
-      <b>Download Content</b><br>
-        <b>~</b> Download web content, such as <b>https://example.com/photo.jpg</b> in Web Browser.<br>
-        <div style="height:3px;"></div>
-        <b>~</b> Support image, audio, video, etc<br>
-        <div style="height:3px;"></div>
-        <b>~</b> Only support direct url, not streaming url<br>
-        <div style="height:3px;"></div>
-        <b>~</b> Click <b>Web Browser > Menu > Download Content</b><br><br>
-      <b>Reader View</b><br>
-        <b>~</b> Parses html text (usually news and other articles) and returns title, author, main image and text content without nav bars, ads, footers, or anything that isn\'t the main body of the text. Analyzes each node, gives them a score, and determines what\'s relevant and what can be discarded<br>
-        <div style="height:3px;"></div>
-        <b>~</b> <b>Open with Reader View</b> render all element<b></b><br>
-        <div style="height:3px;"></div>
-        <b>~</b> <b>Open with Reader View(TEXT)</b> only extract text<b></b><br><br>
-      <b>Reader View Shortcut Key</b><br>
-        <b>*</b> Screenshot viewport<br>
-        <b>#</b> Screenshot entire page<br>
-        <b>Left Key</b> Zoom-out<b></b><br>
-        <b>Right Key</b> Zoom-in<b></b><br><br>
-      <b>Browser Shortcut Key</b><br>
-        <b>1</b> Zoom-out<br>
-        <b>2</b> Reset zoom<br>
-        <b>3</b> Zoom-in<br>
-        <b>5</b> Hide/Show menu
-    </div>`,
+    templateUrl: document.location.origin + '/templates/helpnsupport.html',
     mounted: function() {
       this.$router.setHeaderTitle('Help & Support');
       setTimeout(() => {
         navigator.spatialNavigationEnabled = false;
       }, 100);
+    },
+    unmounted: function() {},
+    methods: {},
+    softKeyText: { left: '', center: '', right: '' },
+    softKeyListener: {
+      left: function() {},
+      center: function() {},
+      right: function() {}
+    }
+  });
+
+  const changelogs = new Kai({
+    name: 'changelogs',
+    data: {
+      title: 'changelogs'
+    },
+    templateUrl: document.location.origin + '/templates/changelogs.html',
+    mounted: function() {
+      this.$router.setHeaderTitle('Changelogs');
     },
     unmounted: function() {},
     methods: {},
@@ -1173,7 +1185,7 @@ window.addEventListener("load", function() {
         const sk = document.getElementById('__kai_soft_key__');
         navigator.spatialNavigationEnabled = false;
         sk.classList.remove("sr-only");
-        const urlDialog = Kai.createDialog('URL/Search', '<div><input id="url-input" type="text" class="kui-input"/></div>', null, '', undefined, '', undefined, '', undefined, undefined, this.$router);
+        const urlDialog = Kai.createDialog('URL/Google Search', '<div><input id="url-input" type="text" placeholder="Enter URL/Google Search" class="kui-input"/></div>', null, '', undefined, '', undefined, '', undefined, undefined, this.$router);
         urlDialog.mounted = () => {
           setTimeout(() => {
             setTimeout(() => {
@@ -1184,7 +1196,20 @@ window.addEventListener("load", function() {
               return;
             }
             URL.focus();
-            URL.value = this.$state.getState('target_url');
+            var _temp = this.$state.getState('target_url');
+            if (_temp.indexOf('https://www.google.') > -1) {
+              const q = getURLParam('q', _temp);
+              if (q.length > 0) {
+                _temp = q[0].split('+');
+                _temp = decodeURIComponent(_temp.join(' '));
+                console.log(q[0], _temp);
+              } else {
+                if (_temp.split('/').length === 4) {
+                  _temp = '';
+                }
+              }
+            }
+            URL.value = _temp;
             URL.addEventListener('keydown', (evt) => {
               switch (evt.key) {
                 case 'Backspace':
@@ -1275,8 +1300,8 @@ window.addEventListener("load", function() {
       localforage.getItem('APP_VERSION')
       .then((v) => {
         if (v == null || v != APP_VERSION) {
-          this.$router.showToast(`Read about 2 new updates`);
-          this.$router.push('helpSupportPage');
+          this.$router.showToast(`Read about new updates`);
+          this.$router.push('changelogs');
           localforage.setItem('APP_VERSION', APP_VERSION)
         } else {
           localforage.getItem('POCKET_ACCESS_TOKEN')
@@ -1440,7 +1465,8 @@ window.addEventListener("load", function() {
             { "text": "History" },
             { "text": "Clear History" },
             { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' },
-            { "text": JS }
+            { "text": JS },
+            { "text": "Changelogs" }
           );
           if (res) {
             menu.push({ "text": "Logout" });
@@ -1533,6 +1559,8 @@ window.addEventListener("load", function() {
                 });
               } else if (selected.text ===  'Help & Support') {
                 this.$router.push('helpSupportPage');
+              } else if (selected.text ===  'Changelogs') {
+                this.$router.push('changelogs');
               } else if (selected.text === 'Saved Reader View') {
                 setTimeout(() => {
                   this.$router.push('offlineArticles');
@@ -1694,7 +1722,11 @@ window.addEventListener("load", function() {
       'helpSupportPage': {
         name: 'helpSupportPage',
         component: helpSupportPage
-      }
+      },
+      'changelogs': {
+        name: 'changelogs',
+        component: changelogs
+      },
     }
   });
 

@@ -501,20 +501,48 @@ const Kai = (function() {
     if (navClass === 'horizontalNavClass') {
       return targetElement.parentElement.scrollLeft = targetElement.offsetLeft - targetElement.offsetWidth;
     } else if (navClass === 'verticalNavClass') {
+      const parent = window.getComputedStyle(document.getElementById(this.id));
       if (targetElement.offsetTop > targetElement.parentElement.clientHeight) {
-        var fill = 0;
-        var scroll = targetElement.offsetTop - targetElement.parentElement.clientHeight;
-        const max = targetElement.clientHeight * this[navIndex];
-        const less = targetElement.offsetTop - max;
-        fill = targetElement.clientHeight - less;
-        return targetElement.parentElement.scrollTop = scroll + fill;
+        if ((targetElement.tagName === 'INPUT' || targetElement.tagName === 'TEXTAREA')) {
+          const LI = getParent(targetElement);
+          if (LI && !isElementInViewport(LI, parseFloat(parent.marginTop), parseFloat(parent.marginBottom))) {
+            var fill = parseFloat(LI.parentElement.clientHeight) - ((parseFloat(LI.offsetTop) - parseFloat(parent.marginTop)) + parseFloat(LI.offsetHeight));
+            fill = fill < 0 ? -(fill) : fill;
+            pad = fill;
+            return LI.parentElement.scrollTop = pad;
+          }
+        }
+        return targetElement.parentElement.scrollTop
       } else {
+        var pad = 0;
         if ((targetElement.tagName === 'INPUT' || targetElement.tagName === 'TEXTAREA')) {
           return targetElement.parentElement.parentElement.scrollTop = 0;
+        } else if (!isElementInViewport(targetElement, parseFloat(parent.marginTop), parseFloat(parent.marginBottom))) {
+          var fill = parseFloat(targetElement.parentElement.clientHeight) - ((parseFloat(targetElement.offsetTop) - parseFloat(parent.marginTop)) + parseFloat(targetElement.offsetHeight));
+          fill = fill < 0 ? -(fill) : fill;
+          pad = fill;
         }
-        return targetElement.parentElement.scrollTop = 0;
+        return targetElement.parentElement.scrollTop = 0 + pad;
       }
     }
+  }
+
+  function getParent(targetElement) {
+    if (targetElement.parentElement == null)
+      return null
+    if (targetElement.parentElement.tagName != 'LI')
+      return getParent(targetElement.parentElement);
+    return targetElement.parentElement;
+  }
+
+  function isElementInViewport(el, marginTop = 0, marginBottom = 0) {
+    var rect = el.getBoundingClientRect();
+    return (
+        rect.top >= 0 + marginTop &&
+        rect.left >= 0 &&
+        rect.bottom <= ((window.innerHeight || document.documentElement.clientHeight) - marginBottom) && /* or $(window).height() */
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth) /* or $(window).width() */
+    );
   }
 
   return Kai;
