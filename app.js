@@ -61,7 +61,7 @@ window.addEventListener("load", function() {
     }
   }
 
-  function downloadURL($router, url) {
+  function downloadURL($router, url, title = 'Unknown') {
     $router.showLoading();
     const down = new XMLHttpRequest({ mozSystem: true });
     down.open('GET', url, true);
@@ -74,7 +74,7 @@ window.addEventListener("load", function() {
       } catch(e) {
         mime = '';
       }
-      saveAs(evt.currentTarget.response, `${new Date().getTime().toString()}.${mime}`);
+      saveAs(evt.currentTarget.response, `${title}_${new Date().getTime().toString()}.${mime}`);
       $router.hideLoading();
     }
     down.onprogress = (evt) => {
@@ -1041,26 +1041,22 @@ window.addEventListener("load", function() {
                   const KAIOS_BROWSER = window.open(window['currentTab'].url.url);
                   startKaiOsBrowserTimer(KAIOS_BROWSER);
                 } else if (selected.text === 'Open with Reader View' || selected.text === 'Open with Reader View(TEXT)') {
-                  if (window['currentTab'].title === 'string') {
-                    readabilityPage(this.$router, window['currentTab'].url.url, title, false, selected.text === 'Open with Reader View(TEXT)');
-                  } else {
-                    var hashids = new Hashids(window['currentTab'].url.url, 10);
-                    var id = hashids.encode(1);
-                    localforage.getItem('ARTICLES')
-                    .then((articles) => {
-                      var filtered = [];
-                      if (articles != null) {
-                        filtered = articles.filter(function(a) {
-                          return a.hashid == id;
-                        });
-                        if (filtered.length > 0) {
-                          readabilityPage(this.$router, window['currentTab'].url.url, filtered[0].title, false, selected.text === 'Open with Reader View(TEXT)');
-                        } else {
-                          readabilityPage(this.$router, window['currentTab'].url.url, 'UNKNOWN', false, selected.text === 'Open with Reader View(TEXT)');
-                        }
+                  var hashids = new Hashids(window['currentTab'].url.url, 10);
+                  var id = hashids.encode(1);
+                  localforage.getItem('ARTICLES')
+                  .then((articles) => {
+                    var filtered = [];
+                    if (articles != null) {
+                      filtered = articles.filter(function(a) {
+                        return a.hashid == id;
+                      });
+                      if (filtered.length > 0) {
+                        readabilityPage(this.$router, window['currentTab'].url.url, filtered[0].title, false, selected.text === 'Open with Reader View(TEXT)');
+                      } else {
+                        readabilityPage(this.$router, window['currentTab'].url.url, 'UNKNOWN', false, selected.text === 'Open with Reader View(TEXT)');
                       }
-                    })
-                  }
+                    }
+                  })
                 } else if (selected.text === 'Save Reader View') {
                   readabilityPage(this.$router, window['currentTab'].url.url, '', true);
                 } else if (selected.text === 'Delete Reader View') {
@@ -1081,7 +1077,8 @@ window.addEventListener("load", function() {
                     }
                   })
                 } else if (selected.text === 'Download Content') {
-                  downloadURL(this.$router, this.$state.getState('target_url'));
+                  var _title = window['currentTab'].title;
+                  downloadURL(this.$router, this.$state.getState('target_url'), typeof _title === 'string' ? _title : 'Unknown');
                 } else if (selected.text === 'Volume Control') {
                   setTimeout(() => {
                     navigator.volumeManager.requestShow();
@@ -1196,6 +1193,7 @@ window.addEventListener("load", function() {
               return;
             }
             URL.focus();
+            URL.setSelectionRange(URL.value.length, URL.value.length);
             var _temp = this.$state.getState('target_url');
             if (_temp.indexOf('https://www.google.') > -1) {
               const q = getURLParam('q', _temp);
