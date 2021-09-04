@@ -38,6 +38,9 @@
     },
     "video-capture": {
       "description": "QR-Code reader"
+    },
+    "device-storage:sdcard":{
+      "access": "readwrite"
     }
   },
   "locales": {

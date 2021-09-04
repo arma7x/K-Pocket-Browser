@@ -1,4 +1,4 @@
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '1.10.0';
 
 window.addEventListener("load", function() {
 
@@ -1468,7 +1468,7 @@ window.addEventListener("load", function() {
           const JS = this.$state.getState('disableJS') ? 'Enable Javascript' : 'Disable Javascript';
           const blueFilter = root.classList.contains('blue-filter');
           var title = 'Menu';
-          var menu = [{ "text": "Help & Support" }];
+          var menu = [];
           if (res) {
             title = res.username;
             menu.push({ "text": "Refresh" });
@@ -1479,12 +1479,14 @@ window.addEventListener("load", function() {
             { "text": "Web Browser" },
             { "text": "Scan QR Code" },
             { "text": "Saved Reader View" },
+            { "text": "Local HTML" },
             { "text": "Bookmarks" },
             { "text": "History" },
             { "text": "Clear History" },
             { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' },
             { "text": JS },
-            { "text": "Changelogs" }
+            { "text": "Changelogs" },
+            { "text": "Help & Support" }
           );
           if (res) {
             menu.push({ "text": "Logout" });
@@ -1628,7 +1630,7 @@ window.addEventListener("load", function() {
         }
       },
       right: function() {
-        var title = 'Menu';
+        var title = 'More';
         var menu = [
           { "text": "Open with built-in browser" },
           { "text": "Open with KaiOS Browser" },
