@@ -129,7 +129,7 @@ window.addEventListener("load", function() {
     });
   }
 
-  const readabilityPage = function($router, url, title = '', save, textOnly = false) {
+  const readabilityPage = function($router, url, title = '', save, textOnly = false, _cb = () => {}) {
     navigator.spatialNavigationEnabled = false;
     var hashids = new Hashids(url, 10);
     var id = hashids.encode(1);
@@ -139,7 +139,7 @@ window.addEventListener("load", function() {
         if (textOnly)
           article = article.replace(/<img .*?>/g,"")
         setTimeout(() => {
-          $router.push(new Kai({
+          $router.showBottomSheet(new Kai({
             name: 'readabilityPage',
             data: {
               title: 'readabilityPage'
@@ -152,8 +152,13 @@ window.addEventListener("load", function() {
             },
             unmounted: function() {
               document.removeEventListener('keydown', this.methods.takeScreenshot);
+              document.getElementById('__readabilityPage__').scrollTop = 0;
+              setTimeout(() => {
+                document.getElementById('__readabilityPage__').remove();
+              }, 100);
+              _cb();
             },
-            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:5px;">' + title + '</h4><span id="articleBody" style="font-size: 100%;">' + article + '</span></div>',
+            template: '<div id="__readabilityPage__" class="kui-flex-wrap" style="background-color:#fff;height:290px;overflow:hidden;padding:2px;"><style>img{width:100%;height:auto;}.kui-overlay-visible{z-index:10;}</style><h4 style="margin-bottom:5px;">' + title + '</h4><span id="articleBody" style="font-size: 100%;">' + article + '</span></div>',
             methods: {
               takeScreenshot: function(evt) {
                 takeScreenshot(title, evt);
@@ -161,7 +166,13 @@ window.addEventListener("load", function() {
             },
             dPadNavListener: {
               arrowRight: function() {},
+              arrowUp: function() {
+                document.getElementById('__readabilityPage__').scrollTop -= 20;
+              },
               arrowLeft: function() {},
+              arrowDown: function() {
+                document.getElementById('__readabilityPage__').scrollTop += 20;
+              },
             },
             softKeyListener: {
               left: function() {
@@ -213,7 +224,7 @@ window.addEventListener("load", function() {
             })
             return
           }
-          $router.push(new Kai({
+          $router.showBottomSheet(new Kai({
             name: 'readabilityPage',
             data: {
               title: 'readabilityPage'
@@ -226,8 +237,13 @@ window.addEventListener("load", function() {
             },
             unmounted: function() {
               document.removeEventListener('keydown', this.methods.takeScreenshot);
+              document.getElementById('__readabilityPage__').scrollTop = 0;
+              setTimeout(() => {
+                document.getElementById('__readabilityPage__').remove();
+              }, 100);
+              _cb();
             },
-            template: '<div id="__readabilityPage__" style="padding:4px;"><style>#__kai_router__{height:294px!important;}.kui-router-m-bottom{margin-bottom:0px!important;}img{width:100%;height:auto;}.kui-software-key,.kui-header{height:0px;}.kui-router-m-top{margin-top:0;}</style><h4 style="margin-bottom:4px;">' + res.title + '</h4><span id="articleBody" style="font-size: 100%;">' + clean + '</span></div>',
+            template: '<div id="__readabilityPage__" class="kui-flex-wrap" style="background-color:#fff;height:290px;overflow:hidden;padding:2px;"><style>img{width:100%;height:auto;}.kui-overlay-visible{z-index:10;}</style><h4 style="margin-bottom:4px;">' + res.title + '</h4><span id="articleBody" style="font-size: 100%;">' + clean + '</span></div>',
             methods: {
               takeScreenshot: function(evt) {
                 takeScreenshot(title, evt);
@@ -235,7 +251,13 @@ window.addEventListener("load", function() {
             },
             dPadNavListener: {
               arrowRight: function() {},
+              arrowUp: function() {
+                document.getElementById('__readabilityPage__').scrollTop -= 20;
+              },
               arrowLeft: function() {},
+              arrowDown: function() {
+                document.getElementById('__readabilityPage__').scrollTop += 20;
+              },
             },
             softKeyListener: {
               left: function() {
@@ -535,6 +557,18 @@ window.addEventListener("load", function() {
       articles: [],
       empty: true
     },
+    mounted: function() {
+      this.$router.setHeaderTitle('Saved Reader View');
+      setTimeout(() => {
+        navigator.spatialNavigationEnabled = false;
+      }, 100);
+      this.methods.getArticles();
+    },
+    unmounted: function() {
+      this.data.articles = []
+    },
+    verticalNavClass: '.offlineArticlesNav',
+    templateUrl: document.location.origin + '/templates/offlineArticles.html',
     methods: {
       getArticles: function() {
         localforage.getItem('ARTICLES')
@@ -556,20 +590,18 @@ window.addEventListener("load", function() {
             }
           }
         });
+      },
+      renderSoftKeyText: function() {
+        console.log(111111111);
+        setTimeout(() => {
+          if (this.data.articles.length > 0) {
+            this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
+          } else {
+            this.$router.setSoftKeyText('', '', '')
+          }
+        }, 100);
       }
     },
-    mounted: function() {
-      this.$router.setHeaderTitle('Saved Reader View');
-      setTimeout(() => {
-        navigator.spatialNavigationEnabled = false;
-      }, 100);
-      this.methods.getArticles();
-    },
-    unmounted: function() {
-      this.data.articles = []
-    },
-    verticalNavClass: '.offlineArticlesNav',
-    templateUrl: document.location.origin + '/templates/offlineArticles.html',
     dPadNavListener: {
       arrowUp: function() {
         if (this.verticalNavIndex === 0) {
@@ -607,20 +639,14 @@ window.addEventListener("load", function() {
               }
             })
           }, 'No', () => {}, '', () => {}, () => {
-            setTimeout(() => {
-              if (this.data.articles.length > 0) {
-                this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
-              } else {
-                this.$router.setSoftKeyText('', '', '')
-              }
-            }, 100);
+            this.methods.renderSoftKeyText();
           });
         }
       },
       center: function() {
         if (this.data.articles.length > 0) {
           var current = this.data.articles[this.verticalNavIndex];
-          readabilityPage(this.$router, current.hashid, current.title, false);
+          readabilityPage(this.$router, current.hashid, current.title, false, false, this.methods.renderSoftKeyText);
         }
       },
       right: function() {
@@ -639,16 +665,10 @@ window.addEventListener("load", function() {
               const KAIOS_BROWSER = window.open(current.url);
               startKaiOsBrowserTimer(KAIOS_BROWSER);
             } else if (selected.text === 'Open with Reader View(TEXT)'){
-              readabilityPage(this.$router, current.hashid, current.title, false, true);
+              readabilityPage(this.$router, current.hashid, current.title, false, true, this.methods.renderSoftKeyText);
             }
           }, () => {
-            setTimeout(() => {
-              if (this.data.articles.length > 0) {
-                this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
-              } else {
-                this.$router.setSoftKeyText('', '', '')
-              }
-            }, 100);
+            this.methods.renderSoftKeyText();
           }, 0)
         }
       } 
@@ -1051,14 +1071,14 @@ window.addEventListener("load", function() {
                         return a.hashid == id;
                       });
                       if (filtered.length > 0) {
-                        readabilityPage(this.$router, window['currentTab'].url.url, filtered[0].title, false, selected.text === 'Open with Reader View(TEXT)');
+                        readabilityPage(this.$router, window['currentTab'].url.url, filtered[0].title, false, selected.text === 'Open with Reader View(TEXT)', () => {navigator.spatialNavigationEnabled = true});
                       } else {
-                        readabilityPage(this.$router, window['currentTab'].url.url, 'UNKNOWN', false, selected.text === 'Open with Reader View(TEXT)');
+                        readabilityPage(this.$router, window['currentTab'].url.url, 'UNKNOWN', false, selected.text === 'Open with Reader View(TEXT)', () => {navigator.spatialNavigationEnabled = true});
                       }
                     }
                   })
                 } else if (selected.text === 'Save Reader View') {
-                  readabilityPage(this.$router, window['currentTab'].url.url, '', true);
+                  readabilityPage(this.$router, window['currentTab'].url.url, '', true, false, () => {navigator.spatialNavigationEnabled = true});
                 } else if (selected.text === 'Delete Reader View') {
                   var hashids = new Hashids(window['currentTab'].url.url, 10);
                   var id = hashids.encode(1);
@@ -1623,7 +1643,7 @@ window.addEventListener("load", function() {
         localforage.getItem('CONTENT___' + id)
         .then((article) => {
           if (article != null) {
-            menu[3] = { "text": "Delete Reader View" }
+            menu[4] = { "text": "Delete Reader View" }
           }
           this.$router.showOptionMenu(title, menu, 'Select', (selected) => {
             setTimeout(() => {
