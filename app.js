@@ -292,13 +292,13 @@ window.addEventListener("load", function() {
 
   const getPocketApi = function(ACCESS_TOKEN, type, config = {}) {
     return new Promise((resolve, reject) => {
-      var URL;
+      var _URL;
       if (type === 'ADD') {
-        URL = 'https://getpocket.com/v3/add';
+        _URL = 'https://getpocket.com/v3/add';
       } else if (type === 'UPDATE') {
-        URL = 'https://getpocket.com/v3/send';
+        _URL = 'https://getpocket.com/v3/send';
       } else if (type === 'GET') {
-        URL = 'https://getpocket.com/v3/get';
+        _URL = 'https://getpocket.com/v3/get';
       }
       var request = new XMLHttpRequest({ mozSystem: true });
       var params = {
@@ -306,7 +306,7 @@ window.addEventListener("load", function() {
         "access_token": ACCESS_TOKEN
       };
       params = Object.assign(params, config);
-      request.open('POST', URL, true);
+      request.open('POST', _URL, true);
       request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
       request.setRequestHeader("X-Accept", 'application/json');
       request.onreadystatechange = () => {
@@ -592,7 +592,6 @@ window.addEventListener("load", function() {
         });
       },
       renderSoftKeyText: function() {
-        console.log(111111111);
         setTimeout(() => {
           if (this.data.articles.length > 0) {
             this.$router.setSoftKeyText('Delete', 'OPEN', 'Options')
@@ -694,9 +693,10 @@ window.addEventListener("load", function() {
       var TARGET_URL = this.$state.getState('target_url');
       if (TARGET_URL === '') {
         TARGET_URL = 'https://www.google.com/';
-      } else if (!validURL(TARGET_URL)) {
+      } else if (!validURL(TARGET_URL) && TARGET_URL.indexOf('blob:app://') === -1) {
         TARGET_URL = 'https://www.google.com/search?q=' + TARGET_URL;
       }
+      console.log(TARGET_URL);
       this.$state.setState('target_url', TARGET_URL);
       currentTab = new Tab(TARGET_URL);
       currentTab.iframe.setAttribute('style', 'position:fixed;margin-top:0px;top:0;height:101%;width:100%;');
@@ -793,11 +793,11 @@ window.addEventListener("load", function() {
           switch (evt.key) {
             case 'ArrowDown':
             case 'ArrowUp':
-              const URL = document.getElementById('url-input');
+              const _URL = document.getElementById('url-input');
               if (URL == null) {
                 break
               }
-              URL.focus();
+              _URL.focus();
               evt.preventDefault();
               evt.stopPropagation();
               break
@@ -1071,14 +1071,32 @@ window.addEventListener("load", function() {
                         return a.hashid == id;
                       });
                       if (filtered.length > 0) {
-                        readabilityPage(this.$router, window['currentTab'].url.url, filtered[0].title, false, selected.text === 'Open with Reader View(TEXT)', () => {navigator.spatialNavigationEnabled = true});
+                        readabilityPage(this.$router, window['currentTab'].url.url, filtered[0].title, false, selected.text === 'Open with Reader View(TEXT)', () => {
+                          navigator.spatialNavigationEnabled = true;
+                          const sk = document.getElementById('__kai_soft_key__');
+                          sk.classList.add("sr-only");
+                          const kr = document.getElementById('__kai_router__');
+                          kr.classList.add("full-screen-browser");
+                        });
                       } else {
-                        readabilityPage(this.$router, window['currentTab'].url.url, 'UNKNOWN', false, selected.text === 'Open with Reader View(TEXT)', () => {navigator.spatialNavigationEnabled = true});
+                        readabilityPage(this.$router, window['currentTab'].url.url, 'UNKNOWN', false, selected.text === 'Open with Reader View(TEXT)', () => {
+                          navigator.spatialNavigationEnabled = true;
+                          const sk = document.getElementById('__kai_soft_key__');
+                          sk.classList.add("sr-only");
+                          const kr = document.getElementById('__kai_router__');
+                          kr.classList.add("full-screen-browser");
+                        });
                       }
                     }
                   })
                 } else if (selected.text === 'Save Reader View') {
-                  readabilityPage(this.$router, window['currentTab'].url.url, '', true, false, () => {navigator.spatialNavigationEnabled = true});
+                  readabilityPage(this.$router, window['currentTab'].url.url, '', true, false, () => {
+                    navigator.spatialNavigationEnabled = true;
+                    const sk = document.getElementById('__kai_soft_key__');
+                    sk.classList.add("sr-only");
+                    const kr = document.getElementById('__kai_router__');
+                    kr.classList.add("full-screen-browser");
+                  });
                 } else if (selected.text === 'Delete Reader View') {
                   var hashids = new Hashids(window['currentTab'].url.url, 10);
                   var id = hashids.encode(1);
@@ -1208,12 +1226,11 @@ window.addEventListener("load", function() {
             setTimeout(() => {
               this.$router.setSoftKeyText('Cancel' , '', 'Go');
             }, 103);
-            const URL = document.getElementById('url-input');
+            const _URL = document.getElementById('url-input');
             if (!URL) {
               return;
             }
-            URL.focus();
-            URL.setSelectionRange(URL.value.length, URL.value.length);
+            _URL.focus();
             var _temp = this.$state.getState('target_url');
             if (_temp.indexOf('https://www.google.') > -1) {
               const q = getURLParam('q', _temp);
@@ -1227,8 +1244,9 @@ window.addEventListener("load", function() {
                 }
               }
             }
-            URL.value = _temp;
-            URL.addEventListener('keydown', (evt) => {
+            _URL.value = _temp;
+            _URL.setSelectionRange(0, _URL.value.length);
+            _URL.addEventListener('keydown', (evt) => {
               switch (evt.key) {
                 case 'Backspace':
                 case 'EndCall':
@@ -1236,7 +1254,7 @@ window.addEventListener("load", function() {
                     this.$router.hideBottomSheet();
                     sk.classList.add("sr-only");
                     setTimeout(() => {
-                      URL.blur();
+                      _URL.blur();
                       navigator.spatialNavigationEnabled = true;
                     }, 100);
                   }
@@ -1244,14 +1262,14 @@ window.addEventListener("load", function() {
                 case 'SoftRight':
                   sk.classList.add("sr-only");
                   
-                  var TARGET_URL = URL.value;
+                  var TARGET_URL = _URL.value;
                   if (!validURL(TARGET_URL)) {
                     TARGET_URL = 'https://www.google.com/search?q=' + TARGET_URL;
                   }
                   this.$state.setState('target_url', TARGET_URL);
                   window['currentTab'].iframe.src = TARGET_URL;
                   setTimeout(() => {
-                    URL.blur();
+                    _URL.blur();
                     navigator.spatialNavigationEnabled = true;
                     this.$router.hideBottomSheet();
                   }, 100);
@@ -1259,7 +1277,7 @@ window.addEventListener("load", function() {
                 case 'SoftLeft':
                   sk.classList.add("sr-only");
                   setTimeout(() => {
-                    URL.blur();
+                    _URL.blur();
                     navigator.spatialNavigationEnabled = true;
                     this.$router.hideBottomSheet();
                   }, 100);
@@ -1270,12 +1288,12 @@ window.addEventListener("load", function() {
         }
         urlDialog.dPadNavListener = {
           arrowUp: function() {
-            const URL = document.getElementById('url-input');
-            URL.focus();
+            const _URL = document.getElementById('url-input');
+            _URL.focus();
           },
           arrowDown: function() {
-            const URL = document.getElementById('url-input');
-            URL.focus();
+            const _URL = document.getElementById('url-input');
+            _URL.focus();
           }
         }
         this.$router.showBottomSheet(urlDialog);
@@ -1297,6 +1315,211 @@ window.addEventListener("load", function() {
       });
       return true;
     }
+  });
+
+  const localHTML = new Kai({
+    name: 'localHTML',
+    data: {
+      title: 'localHTML',
+      files: []
+    },
+    verticalNavClass: '.localHTML',
+    templateUrl: document.location.origin + '/templates/localHTML.html',
+    mounted: function() {
+      this.$router.setHeaderTitle('Local HTML');
+      this.$router.setSoftKeyCenterText('OPEN');
+      localforage.getItem('FILES')
+      .then((files) => {
+        if (!files) {
+          window['__DS__'] = new DataStorage(this.methods.onChange, this.methods.onReady);
+          setTimeout(() => {
+            this.$router.showToast('Please `Kill App` if you think the app was hang');
+          }, 30000);
+        } else {
+          files.forEach((file) => {
+            if (file.id == null) {
+              const hashids2 = new Hashids(file.path, 15);
+              const _vid = hashids2.encode(1);
+              file.id = _vid;
+            }
+            if (file.location == null) {
+              const _paths = file.path.split('/');
+              _paths.pop();
+              file.location = _paths.length === 0 ? 'root' : _paths.join('/');
+            }
+          });
+          this.setData({files: files});
+        }
+      });
+    },
+    unmounted: function() {
+      if (window['__DS__']) {
+        window['__DS__'].destroy();
+      }
+    },
+    methods: {
+      selected: function() {},
+      onChange: function(fileRegistry, documentTree, groups) {
+        const current = this.$router.stack[this.$router.stack.length - 1].name;
+        if (current !== 'localHTML') {
+          return
+        }
+        this.methods.runFilter(fileRegistry || []);
+      },
+      onReady: function(status) {
+        if (status) {
+          this.$router.hideLoading();
+        } else {
+          this.$router.showLoading(false);
+        }
+      },
+      runFilter: function(fileRegistry) {
+        var files = []
+        fileRegistry.forEach((file) => {
+          var n = file.split('/');
+          var n1 = n[n.length - 1];
+          var exts = n1.split('.');
+          if (exts.length > 1) {
+            const ext = exts[exts.length - 1];
+            if (['html'].indexOf(ext) > -1) {
+              const hashids2 = new Hashids(file, 15);
+              const _vid = hashids2.encode(1);
+              n.pop();
+              files.push({ 'name': n1, 'path': file, id: _vid, location: (n.length === 0 ? 'root' : n.join('/')) });
+            }
+          }
+        });
+        files.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0))
+        this.setData({files: files});
+        localforage.setItem('FILES', files);
+      },
+      search: function(keyword) {
+        this.verticalNavIndex = -1;
+        localforage.getItem('FILES')
+        .then((files) => {
+          if (!files) {
+            files = [];
+          }
+          var result = [];
+          files.forEach((file) => {
+            if (keyword === '' || (file.name.toLowerCase().indexOf(keyword.toLowerCase()) > -1)) {
+              result.push(file);
+            }
+          });
+          result.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0))
+          this.setData({files: result});
+        });
+      }
+    },
+    softKeyText: { left: 'Menu', center: 'OPEN', right: 'Kill App' },
+    softKeyListener: {
+      left: function() {
+        var menu = [
+          {'text': 'Search'},
+          {'text': 'Reload Library'},
+        ]
+        this.$router.showOptionMenu('Menu', menu, 'SELECT', (selected) => {
+          if (selected.text === 'Reload Library') {
+            this.verticalNavIndex = -1;
+            if (window['__DS__']) {
+              window['__DS__'].destroy();
+            }
+            window['__DS__'] = new DataStorage(this.methods.onChange, this.methods.onReady);
+          } else if (selected.text === 'Search') {
+            const searchDialog = Kai.createDialog('Search', '<div><input id="search-input" placeholder="Enter your keyword" class="kui-input" type="text" /></div>', null, '', undefined, '', undefined, '', undefined, undefined, this.$router);
+            searchDialog.mounted = () => {
+              setTimeout(() => {
+                setTimeout(() => {
+                  this.$router.setSoftKeyText('Cancel' , '', 'Go');
+                }, 103);
+                const SEARCH_INPUT = document.getElementById('search-input');
+                if (!SEARCH_INPUT) {
+                  return;
+                }
+                SEARCH_INPUT.focus();
+                SEARCH_INPUT.addEventListener('keydown', (evt) => {
+                  switch (evt.key) {
+                    case 'Backspace':
+                    case 'EndCall':
+                      if (document.activeElement.value.length === 0) {
+                        this.$router.hideBottomSheet();
+                        setTimeout(() => {
+                          SEARCH_INPUT.blur();
+                        }, 100);
+                      }
+                      break
+                    case 'SoftRight':
+                      this.$router.hideBottomSheet();
+                      setTimeout(() => {
+                        SEARCH_INPUT.blur();
+                        this.methods.search(SEARCH_INPUT.value);
+                      }, 100);
+                      break
+                    case 'SoftLeft':
+                      this.$router.hideBottomSheet();
+                      setTimeout(() => {
+                        SEARCH_INPUT.blur();
+                      }, 100);
+                      break
+                  }
+                });
+              });
+            }
+            searchDialog.dPadNavListener = {
+              arrowUp: function() {
+                const SEARCH_INPUT = document.getElementById('search-input');
+                SEARCH_INPUT.focus();
+              },
+              arrowDown: function() {
+                const SEARCH_INPUT = document.getElementById('search-input');
+                SEARCH_INPUT.focus();
+              }
+            }
+            this.$router.showBottomSheet(searchDialog);
+          }
+        }, null);
+      },
+      center: function() {
+        var file = this.data.files[this.verticalNavIndex];
+        if (file) {
+          var DS;
+          if (window['__DS__']) {
+            DS = window['__DS__'];
+          }
+          else {
+            DS = new DataStorage(() => {}, () => {}, false);
+          }
+          DS.getFile(file.path, (blob) => {
+            const _url = URL.createObjectURL(blob);
+            if (window['BLOB_URL'] == null)
+              window['BLOB_URL'] = [];
+            window['BLOB_URL'].push(_url);
+            this.$state.setState('target_url', _url);
+            this.$router.push('browser');
+          }, (err) => {
+            this.$router.showToast(err.toString());
+          })
+        }
+      },
+      right: function() {
+        window.close();
+      }
+    },
+    dPadNavListener: {
+      arrowUp: function() {
+        this.navigateListNav(-1);
+      },
+      arrowRight: function() {
+        //this.navigateTabNav(-1);
+      },
+      arrowDown: function() {
+        this.navigateListNav(1);
+      },
+      arrowLeft: function() {
+        //this.navigateTabNav(1);
+      },
+    },
+    backKeyListener: function() {}
   });
 
   const homepage = new Kai({
@@ -1338,6 +1561,12 @@ window.addEventListener("load", function() {
           });
         }
       });
+      if (window['BLOB_URL']) {
+        window['BLOB_URL'].forEach((u) => {
+          URL.revokeObjectURL(u);
+        });
+        window['BLOB_URL'] = [];
+      }
     },
     unmounted: function() {},
     methods: {
@@ -1605,6 +1834,8 @@ window.addEventListener("load", function() {
                     }, 200);
                   }
                 });
+              } else if (selected.text === 'Local HTML') {
+                this.$router.push('localHTML');
               }
             }, 100);
           }, () => {
@@ -1746,6 +1977,10 @@ window.addEventListener("load", function() {
       'changelogs': {
         name: 'changelogs',
         component: changelogs
+      },
+      'localHTML': {
+        name: 'localHTML',
+        component: localHTML
       },
     }
   });
