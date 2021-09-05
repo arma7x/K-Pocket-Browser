@@ -25,10 +25,12 @@
     <ul class="kui-list kai-container">
       {{#articles}}
       <li class="offlineArticlesNav kui-divider" @click='selected()'>
-        <div style="width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;">
-          <small style="font-weight:bold;white-space:pre-wrap!important;word-break:break-word!important;">{{ title }}</small>
-          <small style="float:right;text-align:right;">{{ siteName }}</small>
+        <div style="width:100%;height:60px;display:flex;flex-direction:row;">
+        <div style="width:calc(100%);">
+          <div><small style="white-space: pre-wrap!important;word-break: break-word!important;font-weight:bold;">{{ title }}</small></div>
+          <small style="float:right;text-align:right;">[{{ siteName }}]</small>
         </div>
+      </div>
       </li>
       {{/articles}}
     </ul>
