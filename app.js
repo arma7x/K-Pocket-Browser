@@ -1,4 +1,4 @@
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.11.0';
 
 window.addEventListener("load", function() {
 
@@ -128,6 +128,228 @@ window.addEventListener("load", function() {
       xhttp.send();
     });
   }
+  
+  const editBookmarkPage = function($router, bookmark) {
+    $router.push(
+      new Kai({
+        name: 'editBookmark',
+        data: {
+          title: bookmark.title,
+          url: bookmark.url,
+        },
+        verticalNavClass: '.eBMNav',
+        templateUrl: document.location.origin + '/templates/editBookmark.html',
+        mounted: function() {
+          this.$router.setHeaderTitle('Edit Bookmark');
+        },
+        unmounted: function() {},
+        methods: {
+          submit: function() {
+            $router.showDialog('Confirm', 'Are you sure to save changes ?', null, 'Yes', () => {
+              localforage.getItem('POCKET_BOOKMARKS')
+              .then((bookmarks) => {
+                if (bookmarks == null) {
+                  bookmarks = [];
+                }
+                bookmarks.forEach(bm => {
+                  if (bm.url === bookmark.url) {
+                    const TITLE = document.getElementById('title');
+                    const URL = document.getElementById('url');
+                    if (TITLE.value.length > 0 && URL.value.length > 0) {
+                      bm.title = TITLE.value;
+                      bm.url = URL.value;
+                    }
+                  }
+                });
+                return localforage.setItem('POCKET_BOOKMARKS', bookmarks)
+              })
+              .then(() => {
+                $router.pop();
+              });
+            }, 'No', () => {}, '', () => {}, () => {});
+          }
+        },
+        softKeyText: { left: '', center: 'SELECT', right: '' },
+        softKeyListener: {
+          left: function() {},
+          center: function() {
+            const listNav = document.querySelectorAll(this.verticalNavClass);
+            if (this.verticalNavIndex > -1) {
+              if (listNav[this.verticalNavIndex]) {
+                listNav[this.verticalNavIndex].click();
+              }
+            }
+          },
+          right: function() {}
+        },
+        dPadNavListener: {
+          arrowUp: function() {
+            this.navigateListNav(-1);
+          },
+          arrowDown: function() {
+            this.navigateListNav(1);
+          }
+        }
+      })
+    );
+  }
+
+  const bookmarkManagerPage = new Kai({
+    name: '_bookmarkManagerPage_',
+    data: {
+      title: '_bookmarkManagerPage_',
+      bookmarks: [],
+      keyword: null
+    },
+    verticalNavClass: '.bManNav',
+    templateUrl: document.location.origin + '/templates/bookmarkManager.html',
+    mounted: function() {
+      this.$router.setHeaderTitle('Bookmark Manager');
+      this.methods.load();
+    },
+    unmounted: function() {},
+    methods: {
+      load: function() {
+        this.data.keyword = null;
+        localforage.getItem('POCKET_BOOKMARKS')
+        .then((bookmarks) => {
+          if (bookmarks == null) {
+            bookmarks = [];
+          }
+          this.setData({ bookmarks: bookmarks});
+        });
+      },
+      search: function(keyword) {
+        this.verticalNavIndex = -1;
+        if (keyword == null || keyword == '' || keyword.length == 0) {
+          this.methods.load();
+          return;
+        }
+        this.data.keyword = keyword;
+        localforage.getItem('POCKET_BOOKMARKS')
+        .then((bookmarks) => {
+          if (bookmarks == null) {
+            bookmarks = [];
+          }
+          const result = bookmarks.filter(bm => bm.title.toLowerCase().indexOf(keyword.toLowerCase()) >= 0 || bm.url.toLowerCase().indexOf(keyword.toLowerCase()) >= 0);
+          this.setData({ bookmarks: result});
+        });
+      }
+    },
+    softKeyText: { left: 'Search', center: 'OPEN', right: 'More' },
+    softKeyListener: {
+      left: function() {
+        const searchDialog = Kai.createDialog('Search', '<div><input id="search-input" placeholder="Enter your keyword" class="kui-input" type="text" /></div>', null, '', undefined, '', undefined, '', undefined, undefined, this.$router);
+        searchDialog.mounted = () => {
+          setTimeout(() => {
+            setTimeout(() => {
+              this.$router.setSoftKeyText('Cancel' , '', 'Go');
+            }, 103);
+            const SEARCH_INPUT = document.getElementById('search-input');
+            if (!SEARCH_INPUT) {
+              return;
+            }
+            SEARCH_INPUT.focus();
+            SEARCH_INPUT.addEventListener('keydown', (evt) => {
+              switch (evt.key) {
+                case 'Backspace':
+                case 'EndCall':
+                  if (document.activeElement.value.length === 0) {
+                    this.$router.hideBottomSheet();
+                    setTimeout(() => {
+                      SEARCH_INPUT.blur();
+                    }, 100);
+                  }
+                  break
+                case 'SoftRight':
+                  this.$router.hideBottomSheet();
+                  setTimeout(() => {
+                    SEARCH_INPUT.blur();
+                    this.methods.search(SEARCH_INPUT.value);
+                  }, 100);
+                  break
+                case 'SoftLeft':
+                  this.$router.hideBottomSheet();
+                  setTimeout(() => {
+                    SEARCH_INPUT.blur();
+                  }, 100);
+                  break
+              }
+            });
+          });
+        }
+        searchDialog.dPadNavListener = {
+          arrowUp: function() {
+            const SEARCH_INPUT = document.getElementById('search-input');
+            SEARCH_INPUT.focus();
+          },
+          arrowDown: function() {
+            const SEARCH_INPUT = document.getElementById('search-input');
+            SEARCH_INPUT.focus();
+          }
+        }
+        this.$router.showBottomSheet(searchDialog);
+      },
+      center: function() {
+        if (this.verticalNavIndex > -1 && this.data.bookmarks.length > 0) {
+          const f = this.data.bookmarks[this.verticalNavIndex];
+          if (f) {
+            this.$state.setState('target_url', f.url);
+            this.$router.push('browser');
+          }
+        }
+      },
+      right: function() {
+        if (this.verticalNavIndex > -1 && this.data.bookmarks.length > 0) {
+          var current = this.data.bookmarks[this.verticalNavIndex];
+          if (current) {
+            var menus = [
+              { "text": "Edit" },
+              { "text": "Open with KaiOS Browser" },
+              { "text": "Open with Reader View" },
+              { "text": "Open with Reader View(TEXT)" },
+              { "text": "Remove" }
+            ];
+            this.$router.showOptionMenu('Options', menus, 'Select', (selected) => {
+              if (selected.text === 'Open with KaiOS Browser') {
+                const KAIOS_BROWSER = window.open(current.url);
+                startKaiOsBrowserTimer(KAIOS_BROWSER);
+              } else if (selected.text === 'Open with Reader View' || selected.text === 'Open with Reader View(TEXT)'){
+                readabilityPage(this.$router, current.url, current.title, false, selected.text === 'Open with Reader View(TEXT)');
+              } else if (selected.text === 'Edit') {
+                editBookmarkPage(this.$router, current);
+              } else if (selected.text === 'Remove') {
+                const URL = current.url;
+                setTimeout(() => {
+                  this.$router.showDialog('Confirm', 'Are you sure to remove ' + current.title + ' ?', null, 'Yes', () => {
+                    localforage.getItem('POCKET_BOOKMARKS')
+                    .then((bookmarks) => {
+                      if (bookmarks == null) {
+                        bookmarks = [];
+                      }
+                      const result = bookmarks.filter(bm => bm.url !== URL);
+                      return localforage.setItem('POCKET_BOOKMARKS', result)
+                    })
+                    .then(() => {
+                      this.methods.search(this.data.keyword);
+                    });
+                  }, 'No', () => {}, '', () => {}, () => {});
+                }, 100);
+              }
+            }, () => {}, 0)
+          }
+        }
+      }
+    },
+    dPadNavListener: {
+      arrowUp: function() {
+        this.navigateListNav(-1);
+      },
+      arrowDown: function() {
+        this.navigateListNav(1);
+      }
+    }
+  });
 
   const readabilityPage = function($router, url, title = '', save, textOnly = false, _cb = () => {}) {
     navigator.spatialNavigationEnabled = false;
@@ -558,7 +780,7 @@ window.addEventListener("load", function() {
       empty: true
     },
     mounted: function() {
-      this.$router.setHeaderTitle('Saved Reader View');
+      this.$router.setHeaderTitle('Offline Reader View');
       setTimeout(() => {
         navigator.spatialNavigationEnabled = false;
       }, 100);
@@ -696,7 +918,7 @@ window.addEventListener("load", function() {
       } else if (!validURL(TARGET_URL) && TARGET_URL.indexOf('blob:app://') === -1) {
         TARGET_URL = 'https://www.google.com/search?q=' + TARGET_URL;
       }
-      console.log(TARGET_URL);
+      // console.log(TARGET_URL);
       this.$state.setState('target_url', TARGET_URL);
       currentTab = new Tab(TARGET_URL);
       currentTab.iframe.setAttribute('style', 'position:fixed;margin-top:0px;top:0;height:101%;width:100%;');
@@ -794,12 +1016,11 @@ window.addEventListener("load", function() {
             case 'ArrowDown':
             case 'ArrowUp':
               const _URL = document.getElementById('url-input');
-              if (URL == null) {
-                break
+              if (_URL != null) {
+                _URL.focus();
+                evt.preventDefault();
+                evt.stopPropagation();
               }
-              _URL.focus();
-              evt.preventDefault();
-              evt.stopPropagation();
               break
             case '1':
               if (this.data.zoom > 0.25 && !this.$router.bottomSheet) {
@@ -920,6 +1141,7 @@ window.addEventListener("load", function() {
                 menus.push({ "text": "Add Bookmark" });
               }
               menus.push({ "text": "Bookmarks" });
+              menus.push({ "text": "Bookmark Manager" });
               menus.push({ "text": "History" });
               menus.push({ "text": "Clear History" });
               menus.push({ "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' });
@@ -993,53 +1215,61 @@ window.addEventListener("load", function() {
                 } else if (selected.text === 'Bookmarks') {
                   localforage.getItem('POCKET_BOOKMARKS')
                   .then((bookmarks) => {
-                    if (bookmarks) {
-                      if (bookmarks.length > 0) {
-                        var b = [];
-                        bookmarks.forEach((i) => {
-                          b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
-                        });
-                        this.$router.showOptionMenu('Bookmarks', b, 'OPEN', (selected) => {
-                          this.$state.setState('target_url', selected.subtext);
-                          window['currentTab'].iframe.src = selected.subtext;
-                        }, () => {
-                          if (this.$router.stack[this.$router.stack.length - 1].name === 'browser') {
+                    if (bookmarks == null) {
+                      bookmarks = [];
+                    }
+                    if (bookmarks.length == 0) {
+                      this.$router.showToast('Empty');
+                    } else {
+                      var b = [];
+                      bookmarks.forEach((i) => {
+                        b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
+                      });
+                      this.$router.showOptionMenu('Bookmarks', b, 'OPEN', (selected) => {
+                        this.$state.setState('target_url', selected.subtext);
+                        window['currentTab'].iframe.src = selected.subtext;
+                      }, () => {
+                        if (this.$router.stack[this.$router.stack.length - 1].name === 'browser') {
+                          sk.classList.add("sr-only");
+                          navigator.spatialNavigationEnabled = true;
+                        } else if (this.$router.stack.length > 2) {
+                          if (this.$router.stack[this.$router.stack.length - 2].name === 'browser') {
                             sk.classList.add("sr-only");
                             navigator.spatialNavigationEnabled = true;
-                          } else if (this.$router.stack.length > 2) {
-                            if (this.$router.stack[this.$router.stack.length - 2].name === 'browser') {
-                              sk.classList.add("sr-only");
-                              navigator.spatialNavigationEnabled = true;
-                            }
                           }
-                        }, 0);
-                      }
+                        }
+                      }, 0);
                     }
                   });
+                } else if (selected.text == 'Bookmark Manager') {
+                  this.$router.push('bookmarkManagerPage');
                 } else if (selected.text === 'History') {
                   localforage.getItem('POCKET_HISTORY')
                   .then((history) => {
-                    if (history) {
-                      if (history.length > 0) {
-                        var b = [];
-                        history.forEach((i) => {
-                          b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
-                        });
-                        this.$router.showOptionMenu('History', b, 'OPEN', (selected) => {
-                          this.$state.setState('target_url', selected.subtext);
-                          window['currentTab'].iframe.src = selected.subtext;
-                        }, () => {
-                          if (this.$router.stack[this.$router.stack.length - 1].name === 'browser') {
+                    if (history == null) {
+                      history = [];
+                    }
+                    if (history.length == 0) {
+                      this.$router.showToast('Empty');
+                    } else {
+                      var b = [];
+                      history.forEach((i) => {
+                        b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
+                      });
+                      this.$router.showOptionMenu('History', b, 'OPEN', (selected) => {
+                        this.$state.setState('target_url', selected.subtext);
+                        window['currentTab'].iframe.src = selected.subtext;
+                      }, () => {
+                        if (this.$router.stack[this.$router.stack.length - 1].name === 'browser') {
+                          sk.classList.add("sr-only");
+                          navigator.spatialNavigationEnabled = true;
+                        } else if (this.$router.stack.length > 2) {
+                          if (this.$router.stack[this.$router.stack.length - 2].name === 'browser') {
                             sk.classList.add("sr-only");
                             navigator.spatialNavigationEnabled = true;
-                          } else if (this.$router.stack.length > 2) {
-                            if (this.$router.stack[this.$router.stack.length - 2].name === 'browser') {
-                              sk.classList.add("sr-only");
-                              navigator.spatialNavigationEnabled = true;
-                            }
                           }
-                        }, 0);
-                      }
+                        }
+                      }, 0);
                     }
                   });
                 } else if (selected.text === 'Clear History') {
@@ -1065,28 +1295,29 @@ window.addEventListener("load", function() {
                   var id = hashids.encode(1);
                   localforage.getItem('ARTICLES')
                   .then((articles) => {
+                    if (articles == null) {
+                      articles = [];
+                    }
                     var filtered = [];
-                    if (articles != null) {
-                      filtered = articles.filter(function(a) {
-                        return a.hashid == id;
+                    filtered = articles.filter(function(a) {
+                      return a.hashid == id;
+                    });
+                    if (filtered.length > 0) {
+                      readabilityPage(this.$router, window['currentTab'].url.url, filtered[0].title, false, selected.text === 'Open with Reader View(TEXT)', () => {
+                        navigator.spatialNavigationEnabled = true;
+                        const sk = document.getElementById('__kai_soft_key__');
+                        sk.classList.add("sr-only");
+                        const kr = document.getElementById('__kai_router__');
+                        kr.classList.add("full-screen-browser");
                       });
-                      if (filtered.length > 0) {
-                        readabilityPage(this.$router, window['currentTab'].url.url, filtered[0].title, false, selected.text === 'Open with Reader View(TEXT)', () => {
-                          navigator.spatialNavigationEnabled = true;
-                          const sk = document.getElementById('__kai_soft_key__');
-                          sk.classList.add("sr-only");
-                          const kr = document.getElementById('__kai_router__');
-                          kr.classList.add("full-screen-browser");
-                        });
-                      } else {
-                        readabilityPage(this.$router, window['currentTab'].url.url, 'UNKNOWN', false, selected.text === 'Open with Reader View(TEXT)', () => {
-                          navigator.spatialNavigationEnabled = true;
-                          const sk = document.getElementById('__kai_soft_key__');
-                          sk.classList.add("sr-only");
-                          const kr = document.getElementById('__kai_router__');
-                          kr.classList.add("full-screen-browser");
-                        });
-                      }
+                    } else {
+                      readabilityPage(this.$router, window['currentTab'].url.url, 'UNKNOWN', false, selected.text === 'Open with Reader View(TEXT)', () => {
+                        navigator.spatialNavigationEnabled = true;
+                        const sk = document.getElementById('__kai_soft_key__');
+                        sk.classList.add("sr-only");
+                        const kr = document.getElementById('__kai_router__');
+                        kr.classList.add("full-screen-browser");
+                      });
                     }
                   })
                 } else if (selected.text === 'Save Reader View') {
@@ -1237,7 +1468,7 @@ window.addEventListener("load", function() {
               if (q.length > 0) {
                 _temp = q[0].split('+');
                 _temp = decodeURIComponent(_temp.join(' '));
-                console.log(q[0], _temp);
+                //console.log(q[0], _temp);
               } else {
                 if (_temp.split('/').length === 4) {
                   _temp = '';
@@ -1541,7 +1772,7 @@ window.addEventListener("load", function() {
       localforage.getItem('APP_VERSION')
       .then((v) => {
         if (v == null || v != APP_VERSION) {
-          this.$router.showToast(`Read about new updates`);
+          this.$router.showToast('Read about new updates');
           this.$router.push('changelogs');
           localforage.setItem('APP_VERSION', APP_VERSION)
         } else {
@@ -1707,9 +1938,10 @@ window.addEventListener("load", function() {
           menu.push(
             { "text": "Web Browser" },
             { "text": "Scan QR Code" },
-            { "text": "Saved Reader View" },
+            { "text": "Offline Reader View" },
             { "text": "Local HTML" },
             { "text": "Bookmarks" },
+            { "text": "Bookmark Manager" },
             { "text": "History" },
             { "text": "Clear History" },
             { "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' },
@@ -1740,57 +1972,67 @@ window.addEventListener("load", function() {
               } else if (selected.text === 'Bookmarks') {
                 localforage.getItem('POCKET_BOOKMARKS')
                 .then((bookmarks) => {
-                  if (bookmarks) {
-                    if (bookmarks.length > 0) {
-                      var b = [];
-                      bookmarks.forEach((i) => {
-                        b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
-                      });
-                      this.$router.showOptionMenu('Bookmarks', b, 'OPEN', (selected) => {
-                        this.$state.setState('target_url', selected.subtext);
-                        setTimeout(() => {
-                          this.$router.push('browser');
-                        }, 100);
-                      }, () => {
-                        setTimeout(() => {
-                          if (!this.$router.bottomSheet) {
-                            if (this.data.articles[this.verticalNavIndex].isArticle) {
-                              this.$router.setSoftKeyRightText('More');
-                            } else {
-                              this.$router.setSoftKeyRightText('');
-                            }
+                  if (bookmarks == null) {
+                    bookmarks = [];
+                  }
+                  if (bookmarks.length == 0) {
+                    this.$router.showToast('Empty');
+                  } else {
+                    var b = [];
+                    bookmarks.forEach((i) => {
+                      b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
+                    });
+                    this.$router.showOptionMenu('Bookmarks', b, 'OPEN', (selected) => {
+                      this.$state.setState('target_url', selected.subtext);
+                      setTimeout(() => {
+                        this.$router.push('browser');
+                      }, 100);
+                    }, () => {
+                      setTimeout(() => {
+                        if (!this.$router.bottomSheet) {
+                          if (this.data.articles[this.verticalNavIndex].isArticle) {
+                            this.$router.setSoftKeyRightText('More');
+                          } else {
+                            this.$router.setSoftKeyRightText('');
                           }
-                        }, 100);
-                      }, 0);
-                    }
+                        }
+                      }, 100);
+                    }, 0);
                   }
                 });
+              } else if (selected.text == 'Bookmark Manager') {
+                this.$router.push('bookmarkManagerPage');
               } else if (selected.text === 'History') {
                 localforage.getItem('POCKET_HISTORY')
                 .then((history) => {
-                  if (history) {
-                    if (history.length > 0) {
-                      var b = [];
-                      history.forEach((i) => {
-                        b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
-                      });
-                      this.$router.showOptionMenu('History', b, 'OPEN', (selected) => {
-                        this.$state.setState('target_url', selected.subtext);
-                        setTimeout(() => {
-                          this.$router.push('browser');
-                        }, 100);
-                      }, () => {
-                        setTimeout(() => {
-                          if (!this.$router.bottomSheet) {
+                  if (history == null) {
+                    history = [];
+                  }
+                  if (history.length == 0) {
+                    this.$router.showToast('Empty');
+                  } else {
+                    var b = [];
+                    history.forEach((i) => {
+                      b.push({ "text": typeof i.title === "string" ? i.title : 'Unknown', "subtext": i.url });
+                    });
+                    this.$router.showOptionMenu('History', b, 'OPEN', (selected) => {
+                      this.$state.setState('target_url', selected.subtext);
+                      setTimeout(() => {
+                        this.$router.push('browser');
+                      }, 100);
+                    }, () => {
+                      setTimeout(() => {
+                        if (!this.$router.bottomSheet) {
+                          if (this.data.articles[this.verticalNavIndex]) {
                             if (this.data.articles[this.verticalNavIndex].isArticle) {
                               this.$router.setSoftKeyRightText('More');
                             } else {
                               this.$router.setSoftKeyRightText('');
                             }
                           }
-                        }, 100);
-                      }, 0);
-                    }
+                        }
+                      }, 100);
+                    }, 0);
                   }
                 });
               } else if (selected.text === 'Clear History') {
@@ -1810,7 +2052,7 @@ window.addEventListener("load", function() {
                 this.$router.push('helpSupportPage');
               } else if (selected.text ===  'Changelogs') {
                 this.$router.push('changelogs');
-              } else if (selected.text === 'Saved Reader View') {
+              } else if (selected.text === 'Offline Reader View') {
                 setTimeout(() => {
                   this.$router.push('offlineArticles');
                 }, 110);
@@ -1841,10 +2083,12 @@ window.addEventListener("load", function() {
           }, () => {
             setTimeout(() => {
               if (!this.$router.bottomSheet && this.$router.stack[this.$router.stack.length - 1].name === 'homepage') {
-                if (this.data.articles[this.verticalNavIndex].isArticle) {
-                  this.$router.setSoftKeyRightText('More');
-                } else {
-                  this.$router.setSoftKeyRightText('');
+                if (this.data.articles[this.verticalNavIndex]) {
+                  if (this.data.articles[this.verticalNavIndex].isArticle) {
+                    this.$router.setSoftKeyRightText('More');
+                  } else {
+                    this.$router.setSoftKeyRightText('');
+                  }
                 }
               }
             }, 100);
@@ -1982,6 +2226,10 @@ window.addEventListener("load", function() {
         name: 'localHTML',
         component: localHTML
       },
+      'bookmarkManagerPage': {
+        name: 'bookmarkManagerPage',
+        component: bookmarkManagerPage
+      }
     }
   });
 

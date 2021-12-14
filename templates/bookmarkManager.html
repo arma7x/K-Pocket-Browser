@@ -1,0 +1,20 @@
+<div class="kui-flex-wrap">
+  <style>
+    pre {
+      white-space: nowrap; 
+      width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
+  <ul class="kui-list kai-container">
+    {{#bookmarks}}
+    <li class="bManNav kui-divider">
+      <div>
+        <pre style="font-weight:bold;font-size:14px;">{{ title }}</pre>
+        <small><pre>{{ url }}</pre></small>
+      </div>
+    </li>
+    {{/bookmarks}}
+  </ul>
+</div>
