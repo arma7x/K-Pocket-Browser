@@ -1,4 +1,4 @@
-const APP_VERSION = '1.11.0';
+const APP_VERSION = '1.12.0';
 
 window.addEventListener("load", function() {
 
@@ -676,93 +676,30 @@ window.addEventListener("load", function() {
         if (oauthRequest.response) {
           var obj = JSON.parse(oauthRequest.response);
           REQUEST_TOKEN = obj.code;
-          var url = `https://getpocket.com/auth/authorize?request_token=${obj.code}&redirect_uri=${params.redirect_uri}&mobile=1`
-          $router.push(new Kai({
-            name: 'loginPage',
-            data: {
-              title: 'loginPage'
-            },
-            templateUrl: document.location.origin + '/templates/login.html',
-            mounted: function() {
-              const hdr = document.getElementById('__kai_header__');
-              hdr.classList.add("sr-only");
-              const sk = document.getElementById('__kai_soft_key__');
-              sk.classList.add("sr-only");
-              const kr = document.getElementById('__kai_router__');
-              kr.classList.add("full-screen-browser");
-              navigator.spatialNavigationEnabled = true;
-              var frameContainer = document.getElementById('login-container');
-              currentTab = new Tab(url);
-              currentTab.iframe.setAttribute('height', '296px;');
-              currentTab.iframe.setAttribute('frameBorder', '0');
-              var container = document.querySelector('#login-container');
-              var root1 = container.createShadowRoot();
-              var root2 = container.createShadowRoot();
-              root1.appendChild(currentTab.iframe);
-              var shadow = document.createElement('shadow');
-              root2.appendChild(shadow);
-              currentTab.iframe.addEventListener('mozbrowserlocationchange', function (e) {
-                if (e.detail.url === 'https://getpocket.com/en/about' || (e.detail.url.indexOf('success.html') > -1)) {
-                  var oauthAuthorize = new XMLHttpRequest({ mozSystem: true });
-                  var params = {
-                    "consumer_key": CONSUMER_KEY,
-                    "code": REQUEST_TOKEN
-                  };
-                  oauthAuthorize.open('POST', 'https://getpocket.com/v3/oauth/authorize', true);
-                  oauthAuthorize.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-                  oauthAuthorize.setRequestHeader("X-Accept", 'application/json');
-                  oauthAuthorize.onreadystatechange = function() {
-                    if(oauthAuthorize.readyState == 4 && oauthAuthorize.status == 200) {
-                      if (oauthAuthorize.response) {
-                        var obj = JSON.parse(oauthAuthorize.response);
-                        localforage.setItem('POCKET_ACCESS_TOKEN', obj)
-                        .then((res) => {
-                          $router.showToast('Successfully login');
-                        })
-                        .catch((err) => {
-                          $router.showToast('Error saving token');
-                        })
-                        .finally(() => {
-                          $router.pop();
-                        });
-                      } else {
-                        $router.showToast('Invalid response');
-                        $router.pop();
-                      }
-                    } else if (oauthAuthorize.status == 403) {
-                      $router.showToast('Unauthorize 403');
-                      $router.pop();
-                    } else {
-                      $router.showToast('Unknown Error');
-                      $router.pop();
-                    }
-                  }
-                  oauthAuthorize.send(JSON.stringify(params));
-                }
-              });
-            },
-            unmounted: function() {
-              const hdr = document.getElementById('__kai_header__');
-              hdr.classList.remove("sr-only");
-              const sk = document.getElementById('__kai_soft_key__');
-              sk.classList.remove("sr-only");
-              const kr = document.getElementById('__kai_router__');
-              kr.classList.remove("full-screen-browser");
-              navigator.spatialNavigationEnabled = false;
-            },
-            methods: {
-              listenState: function() {}
-            },
-            softKeyText: { left: '', center: '', right: '' },
-            softKeyListener: {
-              left: function() {},
-              center: function() {},
-              right: function() {}
-            },
-            backKeyListener: function() {}
-          }));
-        } else {
-          //console.log(oauthRequest);
+          localStorage.setItem('TEMP_REQUEST_TOKEN', REQUEST_TOKEN);
+          var url = `https://getpocket.com/auth/authorize?request_token=${obj.code}&redirect_uri=${params.redirect_uri}&mobile=1`;
+          var auth_screen = window.open(url);
+          var auth_screen_timer = setInterval(() => {
+            if (auth_screen.closed) {
+              clearInterval(auth_screen_timer);
+              auth_screen_timer = null;
+              const TEMP_POCKET_ACCESS_TOKEN = localStorage.getItem('TEMP_POCKET_ACCESS_TOKEN');
+              if (TEMP_POCKET_ACCESS_TOKEN != null) {
+                var obj = JSON.parse(TEMP_POCKET_ACCESS_TOKEN);
+                localforage.setItem('POCKET_ACCESS_TOKEN', obj)
+                .finally(() => {
+                  localStorage.removeItem('TEMP_REQUEST_TOKEN');
+                  localStorage.removeItem('TEMP_POCKET_ACCESS_TOKEN');
+                  $router.showToast('Success');
+                  window.location.reload()
+                });
+              } else {
+                localStorage.removeItem('TEMP_REQUEST_TOKEN');
+                localStorage.removeItem('TEMP_POCKET_ACCESS_TOKEN');
+                $router.showToast('Unknown Error');
+              }
+            }
+          }, 500);
         }
       } else {
         $router.hideLoading();
@@ -2249,15 +2186,6 @@ window.addEventListener("load", function() {
     //console.log(e);
   }
 
-  IFRAME_TIMER = setInterval(() => {
-    if (document.activeElement.tagName === 'IFRAME') {
-      navigator.spatialNavigationEnabled = true;
-      document.getElementById('search-menu').classList.add('sr-only');
-      document.getElementById('option-menu').classList.add('sr-only');
-      document.getElementById('done-btn').classList.remove('sr-only');
-    }
-  }, 500);
-
   function displayKaiAds() {
     var display = true;
     if (window['kaiadstimer'] == null) {
@@ -2323,6 +2251,15 @@ window.addEventListener("load", function() {
       }, 300);
     }
   });
+
+  IFRAME_TIMER = setInterval(() => {
+    if (document.activeElement.tagName === 'IFRAME') {
+      navigator.spatialNavigationEnabled = true;
+      document.getElementById('search-menu').classList.add('sr-only');
+      document.getElementById('option-menu').classList.add('sr-only');
+      document.getElementById('done-btn').classList.remove('sr-only');
+    }
+  }, 500);
 
   document.addEventListener('visibilitychange', () => {
     if (app.$router.stack.length === 1) {
