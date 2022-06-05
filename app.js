@@ -1,4 +1,4 @@
-const APP_VERSION = '1.12.0';
+const APP_VERSION = '1.13.0';
 
 window.addEventListener("load", function() {
 
@@ -16,17 +16,58 @@ window.addEventListener("load", function() {
     'disableJS': false,
   });
 
+  const getPocketApi = function(ACCESS_TOKEN, type, config = {}) {
+    return new Promise((resolve, reject) => {
+      var _URL;
+      if (type === 'ADD') {
+        _URL = 'https://getpocket.com/v3/add';
+      } else if (type === 'UPDATE') {
+        _URL = 'https://getpocket.com/v3/send';
+      } else if (type === 'GET') {
+        _URL = 'https://getpocket.com/v3/get';
+      }
+      var request = new XMLHttpRequest({ mozSystem: true });
+      var params = {
+        "consumer_key": CONSUMER_KEY,
+        "access_token": ACCESS_TOKEN
+      };
+      params = Object.assign(params, config);
+      request.open('POST', _URL, true);
+      request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      request.setRequestHeader("X-Accept", 'application/json');
+      request.onreadystatechange = () => {
+        if(request.readyState == 4) {
+          try {
+            const response = JSON.parse(request.response);
+            if (request.response && request.status == 200) {
+              resolve({ raw: request, response: response});
+            } else {
+              reject({ raw: request, response: response});
+            }
+          } catch (e) {
+            if (request.response && request.status == 200) {
+              resolve({ raw: request, response: request.response});
+            } else {
+              reject({ raw: request, response: request.response});
+            }
+          }
+        }
+      }
+      request.send(JSON.stringify(params));
+    });
+  }
+
   function takeScreenshot(title, evt) {
     if (evt.key == '*') {
       html2canvas(document.querySelector("#__kai_router__")).then(canvas => {
         canvas.toBlob((blob) => {
-          saveAs(blob, `${new Date().getTime().toString()}.png`); 
+          saveAs(blob, `${new Date().getTime().toString()}.png`);
         });
       });
     } else if (evt.key == '#') {
       html2canvas(document.querySelector("#__readabilityPage__")).then(canvas => {
         canvas.toBlob((blob) => {
-          saveAs(blob, `${new Date().getTime().toString()}.png`); 
+          saveAs(blob, `${new Date().getTime().toString()}.png`);
         });
       });
     } else if (evt.key == 'Call') {
@@ -38,7 +79,6 @@ window.addEventListener("load", function() {
       }
     }
   }
-
 
   function getURLParam(key, target) {
     var values = [];
@@ -128,7 +168,7 @@ window.addEventListener("load", function() {
       xhttp.send();
     });
   }
-  
+
   const editBookmarkPage = function($router, bookmark) {
     $router.push(
       new Kai({
@@ -205,6 +245,9 @@ window.addEventListener("load", function() {
     templateUrl: document.location.origin + '/templates/bookmarkManager.html',
     mounted: function() {
       this.$router.setHeaderTitle('Bookmark Manager');
+      setTimeout(() => {
+        navigator.spatialNavigationEnabled = false;
+      }, 100);
       this.methods.load();
     },
     unmounted: function() {},
@@ -512,47 +555,6 @@ window.addEventListener("load", function() {
     })
   }
 
-  const getPocketApi = function(ACCESS_TOKEN, type, config = {}) {
-    return new Promise((resolve, reject) => {
-      var _URL;
-      if (type === 'ADD') {
-        _URL = 'https://getpocket.com/v3/add';
-      } else if (type === 'UPDATE') {
-        _URL = 'https://getpocket.com/v3/send';
-      } else if (type === 'GET') {
-        _URL = 'https://getpocket.com/v3/get';
-      }
-      var request = new XMLHttpRequest({ mozSystem: true });
-      var params = {
-        "consumer_key": CONSUMER_KEY,
-        "access_token": ACCESS_TOKEN
-      };
-      params = Object.assign(params, config);
-      request.open('POST', _URL, true);
-      request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-      request.setRequestHeader("X-Accept", 'application/json');
-      request.onreadystatechange = () => {
-        if(request.readyState == 4) {
-          try {
-            const response = JSON.parse(request.response);
-            if (request.response && request.status == 200) {
-              resolve({ raw: request, response: response});
-            } else {
-              reject({ raw: request, response: response});
-            }
-          } catch (e) {
-            if (request.response && request.status == 200) {
-              resolve({ raw: request, response: request.response});
-            } else {
-              reject({ raw: request, response: request.response});
-            }
-          }
-        }
-      }
-      request.send(JSON.stringify(params));
-    });
-  }
-
   const qrReader = function($router, cb = () => {}) {
     $router.showBottomSheet(
       new Kai({
@@ -829,7 +831,7 @@ window.addEventListener("load", function() {
             this.methods.renderSoftKeyText();
           }, 0)
         }
-      } 
+      }
     }
   })
 
@@ -1078,7 +1080,6 @@ window.addEventListener("load", function() {
                 menus.push({ "text": "Add Bookmark" });
               }
               menus.push({ "text": "Bookmarks" });
-              menus.push({ "text": "Bookmark Manager" });
               menus.push({ "text": "History" });
               menus.push({ "text": "Clear History" });
               menus.push({ "text": (blueFilter ? 'Turn Off' : 'Turn On') + ' Bluelight Filter' });
@@ -1178,8 +1179,6 @@ window.addEventListener("load", function() {
                       }, 0);
                     }
                   });
-                } else if (selected.text == 'Bookmark Manager') {
-                  this.$router.push('bookmarkManagerPage');
                 } else if (selected.text === 'History') {
                   localforage.getItem('POCKET_HISTORY')
                   .then((history) => {
@@ -1429,7 +1428,7 @@ window.addEventListener("load", function() {
                   break
                 case 'SoftRight':
                   sk.classList.add("sr-only");
-                  
+
                   var TARGET_URL = _URL.value;
                   if (!validURL(TARGET_URL)) {
                     TARGET_URL = 'https://www.google.com/search?q=' + TARGET_URL;
@@ -2149,7 +2148,7 @@ window.addEventListener("load", function() {
       'offlineArticles': {
         name: 'offlineArticles',
         component: offlineArticles
-        
+
       },
       'helpSupportPage': {
         name: 'helpSupportPage',
@@ -2271,7 +2270,7 @@ window.addEventListener("load", function() {
     if (document.activeElement.tagName === 'IFRAME') {
       document.activeElement.blur();
     }
-    
+
     if (document.visibilityState === 'hidden') {
       if (IFRAME_TIMER) {
         clearInterval(IFRAME_TIMER);
