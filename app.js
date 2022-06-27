@@ -1734,6 +1734,22 @@ window.addEventListener("load", function() {
         });
         window['BLOB_URL'] = [];
       }
+      localforage.getItem('DISABLE_JAVASCRIPT')
+      .then((js_status) => {
+        if (js_status == null)
+          js_status = false;
+        this.$state.setState('disableJS', js_status);
+      });
+      localforage.getItem('BLUELIGHT_FILTER')
+      .then((blueFilter) => {
+        if (blueFilter == null)
+          blueFilter = false;
+        const root = document.getElementsByTagName( 'html' )[0];
+        if (blueFilter)
+          root.classList.add('blue-filter')
+        else
+          root.classList.remove('blue-filter')
+      });
     },
     unmounted: function() {},
     methods: {
@@ -1757,7 +1773,7 @@ window.addEventListener("load", function() {
                   } else if (arr[i][1].domain_metadata) {
                     arr[i][1]['preview'] = arr[i][1].domain_metadata.logo;
                   } else {
-                    arr[i][1]['preview'] = '/icons/icon112x112.png';
+                    arr[i][1]['preview'] = '/img/login.png';
                   }
                   arr[i][1]['isArticle'] = true;
                   newArticles.push(arr[i][1]);
@@ -1858,7 +1874,13 @@ window.addEventListener("load", function() {
     softKeyText: { left: 'Menu', center: '', right: '' },
     softKeyListener: {
       left: function() {
-        localforage.getItem('POCKET_ACCESS_TOKEN')
+        localforage.getItem('DISABLE_JAVASCRIPT')
+        .then((js_status) => {
+          if (js_status == null)
+            js_status = false;
+          this.$state.setState('disableJS', js_status);
+          return localforage.getItem('POCKET_ACCESS_TOKEN');
+        })
         .then((res) => {
           const root = document.getElementsByTagName( 'html' )[0];
           const JS = this.$state.getState('disableJS') ? 'Enable Javascript' : 'Disable Javascript';
@@ -1996,12 +2018,16 @@ window.addEventListener("load", function() {
                 window.close();
               } else if (selected.text === 'Enable Javascript' || selected.text === 'Disable Javascript') {
                 this.$state.setState('disableJS', !this.$state.getState('disableJS'));
+                localforage.setItem('DISABLE_JAVASCRIPT', this.$state.getState('disableJS'));
                 this.$router.showToast(this.$state.getState('disableJS') ? 'Javascript disabled' : 'Javascript enabled');
               } else if (selected.text === 'Turn Off Bluelight Filter' || selected.text === 'Turn On Bluelight Filter') {
-                if (blueFilter)
+                if (blueFilter) {
+                  localforage.setItem('BLUELIGHT_FILTER', false);
                   root.classList.remove('blue-filter')
-                else
-                  root.classList.add('blue-filter')
+                } else {
+                  localforage.setItem('BLUELIGHT_FILTER', true);
+                  root.classList.add('blue-filter');
+                }
               } else if (selected.text === 'Scan QR Code') {
                 qrReader(this.$router, (str) => {
                   this.$router.hideBottomSheet();
